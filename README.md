@@ -1,0 +1,2 @@
+# airo
+GoLang project generator
