@@ -25,3 +25,7 @@ func configDir(cfg *config.ProjectConfig) string {
 func serverCmdDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "cmd", "server")
 }
+
+func restAPIDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(projectDir(cfg), "internal", "api", "rest")
+}

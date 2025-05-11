@@ -2,24 +2,79 @@
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"{{ .Module }}/internal/config"
+)
+
+const (
+	ctxTimeout = 10 * time.Second
 )
 
 type App struct {
 	Config *config.Config
 	Logger *slog.Logger
+
+	{{ if .UsePostgres }}PostgresPool *pgxpool.Pool{{ end }}
 }
 
-func NewApp(cfg *config.Config, logger *slog.Logger) *App {
-	return &App{
-		Config: cfg,
-		Logger: logger,
+func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App, error) {
+	ctx, cancel := context.WithTimeout(ctx, ctxTimeout)
+	defer cancel()
+
+	{{ if .UsePostgres }}
+	pgPool, err := newPostgresConnPool(ctx, &cfg.Postgres)
+	if err != nil {
+		return nil, fmt.Errorf("create postgres pool: %w", err)
 	}
+	{{ end }}
+
+	return &App{
+		Config:       cfg,
+		Logger:       logger,
+		PostgresPool: pgPool,
+	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
 	return nil
 }
+
+func (a *App) Close() {
+	{{ if .UsePostgres }}
+	if a.PostgresPool != nil {
+		a.PostgresPool.Close()
+	}
+	{{ end }}
+}
+
+{{ if .UsePostgres }}
+func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
+	pgCfg, err := pgxpool.ParseConfig(cfg.ConnStringWithPoolSize())
+	if err != nil {
+		return nil, fmt.Errorf("parse config: %w", err)
+	}
+
+	//pgCfg.ConnConfig.Tracer = &msxtrace.PGXTracer{}
+	pgCfg.MaxConnLifetime = cfg.ConnMaxLifetime
+	pgCfg.MaxConnLifetimeJitter = time.Second * 5
+	pgCfg.MaxConnIdleTime = cfg.MaxIdleConnTime
+	pgCfg.HealthCheckPeriod = time.Second * 5
+
+	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+
+	return pool, nil
+}
+{{ end }}
 {{ end }}

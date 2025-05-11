@@ -14,6 +14,7 @@ func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 		steps.GoModStep{},
 		steps.OGenStep{},
 		steps.ConfigStep{},
+		steps.RestAPIStep{},
 		steps.AppStep{},
 		steps.ServerCmdStep{},
 		steps.MainGoStep{},

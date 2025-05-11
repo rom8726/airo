@@ -1,0 +1,15 @@
+{{ define "api_go" }}package rest
+
+import (
+	generatedapi "{{ .Module }}/internal/generated/server"
+)
+
+var _ (generatedapi.Handler) = (*RestAPI)(nil) // TODO: implement!
+
+type RestAPI struct {
+}
+
+func New() *RestAPI {
+	return &RestAPI{}
+}
+{{ end }}

@@ -29,7 +29,7 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	appFilePath := filepath.Join(dir, "app.go")
 	fApp, err := os.Create(appFilePath)
 	if err != nil {
-		return fmt.Errorf("create file %qfailed: %w", appFilePath, err)
+		return fmt.Errorf("create file %q failed: %w", appFilePath, err)
 	}
 	defer fApp.Close()
 
