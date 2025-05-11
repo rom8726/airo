@@ -3,10 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/spf13/cobra"
 )
 
 var Version = ""
@@ -18,7 +19,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	//rootCmd.AddCommand()
+	rootCmd.AddCommand(generateCmd)
 
 	rootCmd.Version = Version
 }
