@@ -26,7 +26,7 @@ func runOGen(cfg *config.ProjectConfig) error {
 		"run",
 		"--rm",
 		"-v", currDir+":/workspace",
-		"ghcr.io/ogen-go/ogen:latest",
+		ogenDockerImage,
 		"--target", targetOutputDir,
 		"--clean",
 		targetSpecPath,
