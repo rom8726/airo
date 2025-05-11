@@ -1,0 +1,25 @@
+{{ define "app_go" }}package internal
+
+import (
+	"context"
+	"log/slog"
+
+	"{{ .Module }}/internal/config"
+)
+
+type App struct {
+	Config *config.Config
+	Logger *slog.Logger
+}
+
+func NewApp(cfg *config.Config, logger *slog.Logger) *App {
+	return &App{
+		Config: cfg,
+		Logger: logger,
+	}
+}
+
+func (a *App) Run(ctx context.Context) error {
+	return nil
+}
+{{ end }}

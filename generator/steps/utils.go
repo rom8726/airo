@@ -10,10 +10,18 @@ func projectDir(cfg *config.ProjectConfig) string {
 	return cfg.ProjectName
 }
 
+func internalDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(projectDir(cfg), "internal")
+}
+
 func openapiDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "internal", "generated", "server")
 }
 
 func configDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "internal", "config")
+}
+
+func serverCmdDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(projectDir(cfg), "cmd", "server")
 }

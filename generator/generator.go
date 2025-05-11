@@ -14,10 +14,16 @@ func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 		steps.GoModStep{},
 		steps.OGenStep{},
 		steps.ConfigStep{},
+		steps.AppStep{},
+		steps.ServerCmdStep{},
 		steps.MainGoStep{},
 	}
 
 	for _, step := range steps {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		fmt.Printf("%s... ", step.Description())
 		if err := step.Do(ctx, cfg); err != nil {
 			return err
