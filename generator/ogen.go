@@ -12,21 +12,12 @@ import (
 func runOGen(cfg *config.ProjectConfig) error {
 	currDir := os.Getenv("PWD")
 
-	outputDir := filepath.Join(cfg.ProjectName, "generated", "server")
+	outputDir := filepath.Join(cfg.ProjectName, "internal", "generated", "server")
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
 	}
 
 	specPath := cfg.OpenAPIPath
-
-	//cmd := exec.Command(
-	//	"ogen",
-	//	"--target", outputDir,
-	//	"--clean",
-	//	"--package", "ogenapi",
-	//	specPath,
-	//)
-
 	targetSpecPath := filepath.Join("/workspace", specPath)
 	targetOutputDir := filepath.Join("/workspace", outputDir)
 
