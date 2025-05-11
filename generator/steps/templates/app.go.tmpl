@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rom8726/di"
 
+	"{{ .Module }}/internal/api/rest"
 	"{{ .Module }}/internal/config"
 )
 
@@ -20,6 +22,9 @@ type App struct {
 	Logger *slog.Logger
 
 	{{ if .UsePostgres }}PostgresPool *pgxpool.Pool{{ end }}
+
+	container *di.Container
+	diApp     *di.App
 }
 
 func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App, error) {
@@ -33,14 +38,42 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 	}
 	{{ end }}
 
+	container := di.New()
+	diApp := di.NewApp(container)
+
 	return &App{
 		Config:       cfg,
 		Logger:       logger,
 		PostgresPool: pgPool,
+		container:    container,
+		diApp:        diApp,
 	}, nil
 }
 
+func (a *App) RegisterComponent(constructor any) *di.Provider {
+	return a.container.Provide(constructor)
+}
+
+func (a *App) ResolveComponent(target any) error {
+	return a.container.Resolve(target)
+}
+
+func (a *App) ResolveComponentsToStruct(target any) error {
+	return a.container.ResolveToStruct(target)
+}
+
 func (a *App) Run(ctx context.Context) error {
+	var restAPI *rest.RestAPI
+	if err := a.container.Resolve(restAPI); err != nil {
+		return fmt.Errorf("resolve REST API service component: %w", err)
+	}
+
+	go func() {
+		if err := a.diApp.Run(ctx); err != nil {
+			a.Logger.Error(err.Error())
+		}
+	}()
+
 	return nil
 }
 
