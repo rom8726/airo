@@ -1,2 +1,2 @@
 # airo
-GoLang project generator
+Lightweight GoLang project generator
