@@ -10,15 +10,14 @@ import (
 
 func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 	root := cfg.ProjectName
-
 	if err := os.MkdirAll(root, 0755); err != nil {
 		return err
 	}
 
-	//// 1. go.mod
-	//if err := writeGoMod(cfg); err != nil {
-	//	return err
-	//}
+	// 1. go.mod
+	if err := writeGoMod(cfg); err != nil {
+		return err
+	}
 
 	// 2. ogen
 	if err := runOGen(cfg); err != nil {
