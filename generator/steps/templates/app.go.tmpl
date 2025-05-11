@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/julienschmidt/httprouter"
 	"github.com/rom8726/di"
 	"golang.org/x/sync/errgroup"
 
@@ -72,10 +73,16 @@ func (app *App) Run(ctx context.Context) error {
 		return fmt.Errorf("create API server: %w", err)
 	}
 
+	techServer, err := app.newTechServer()
+	if err != nil {
+		return fmt.Errorf("create tech server: %w", err)
+	}
+
 	app.Logger.Info("Start API server")
 
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error { return apiServer.ListenAndServe(groupCtx) })
+	group.Go(func() error { return techServer.ListenAndServe(groupCtx) })
 	group.Go(func() error { return app.diApp.Run(groupCtx) })
 
 	return group.Wait()
@@ -113,6 +120,30 @@ func (app *App) newAPIServer() (*httpserver.Server, error) {
 		WriteTimeout: cfg.WriteTimeout,
 		IdleTimeout:  cfg.IdleTimeout,
 		Handler:      genServer,
+	}, nil
+}
+
+func (app *App) newTechServer() (*httpserver.Server, error) {
+	cfg := app.Config.TechServer
+	lis, err := net.Listen("tcp", cfg.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("listen %q: %w", cfg.Addr, err)
+	}
+
+	router := httprouter.New()
+	router.Handle(http.MethodGet, "/health",
+		func(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+			writer.WriteHeader(http.StatusOK)
+			_, _ = writer.Write([]byte("ok"))
+		},
+	)
+
+	return &httpserver.Server{
+		Listener:     lis,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
+		Handler:      router,
 	}, nil
 }
 
