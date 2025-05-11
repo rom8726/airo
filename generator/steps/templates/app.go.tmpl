@@ -49,7 +49,7 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 	return &App{
 		Config:       cfg,
 		Logger:       logger,
-		PostgresPool: pgPool,
+		{{ if .UsePostgres }}PostgresPool: pgPool,{{ end }}
 		container:    container,
 		diApp:        diApp,
 	}, nil
@@ -99,8 +99,8 @@ func (app *App) Close() {
 func (app *App) newAPIServer() (*httpserver.Server, error) {
 	cfg := app.Config.APIServer
 
-	var restAPI *rest.RestAPI
-	if err := app.container.Resolve(restAPI); err != nil {
+	var restAPI generatedserver.Handler
+	if err := app.container.Resolve(&restAPI); err != nil {
 		return nil, fmt.Errorf("resolve REST API service component: %w", err)
 	}
 
