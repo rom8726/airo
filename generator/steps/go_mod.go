@@ -1,6 +1,7 @@
-package generator
+package steps
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"os"
@@ -13,13 +14,19 @@ import (
 //go:embed templates/go.mod.tmpl
 var tmplGoMod string
 
-func writeGoMod(cfg *config.ProjectConfig) error {
+type GoModStep struct{}
+
+func (GoModStep) Description() string {
+	return "Create go.mod"
+}
+
+func (GoModStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	tmpl, err := template.New("go_mod").Parse(tmplGoMod)
 	if err != nil {
 		return fmt.Errorf("parse template \"go_mod\" failed: %w", err)
 	}
 
-	goModFilePath := filepath.Join(cfg.ProjectName, "go.mod")
+	goModFilePath := filepath.Join(projectDir(cfg), "go.mod")
 	fGoMod, err := os.Create(goModFilePath)
 	if err != nil {
 		return fmt.Errorf("create file \"%s\" failed: %w", goModFilePath, err)

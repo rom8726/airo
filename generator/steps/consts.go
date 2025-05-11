@@ -1,4 +1,4 @@
-package generator
+package steps
 
 const (
 	goVersion       = "1.24"

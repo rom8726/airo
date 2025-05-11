@@ -24,3 +24,6 @@ go.work.sum
 # IDEs
 .idea
 .vscode
+
+proj1/
+server.yml

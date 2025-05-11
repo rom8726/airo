@@ -1,6 +1,7 @@
-package generator
+package steps
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,10 +10,16 @@ import (
 	"github.com/rom8726/airo/config"
 )
 
-func runOGen(cfg *config.ProjectConfig) error {
+type OGenStep struct{}
+
+func (OGenStep) Description() string {
+	return "Generate OpenAPI server code"
+}
+
+func (OGenStep) Do(ctx context.Context, cfg *config.ProjectConfig) error {
 	currDir := os.Getenv("PWD")
 
-	outputDir := filepath.Join(cfg.ProjectName, "internal", "generated", "server")
+	outputDir := openapiDir(cfg)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
 	}
@@ -21,7 +28,8 @@ func runOGen(cfg *config.ProjectConfig) error {
 	targetSpecPath := filepath.Join("/workspace", specPath)
 	targetOutputDir := filepath.Join("/workspace", outputDir)
 
-	cmd := exec.Command(
+	cmd := exec.CommandContext(
+		ctx,
 		"docker",
 		"run",
 		"--rm",
@@ -35,7 +43,7 @@ func runOGen(cfg *config.ProjectConfig) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	fmt.Println(cmd.String())
+	fmt.Printf("\n%s\n", cmd.String())
 
 	return cmd.Run()
 }
