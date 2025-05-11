@@ -50,6 +50,9 @@ func runServerCommand(ctx context.Context, _ []string) error {
 	}
 	defer app.Close()
 
+	// TODO: register service components
+	app.RegisterComponent(rest.New)
+
 	if err := app.Run(ctx); err != nil {
 		return fmt.Errorf("run app: %w", err)
 	}

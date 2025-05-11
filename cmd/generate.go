@@ -3,12 +3,10 @@ package cmd
 import (
 	"context"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/generator"
-	"github.com/rom8726/airo/tui"
 )
 
 var generateCmd = &cobra.Command{
@@ -21,10 +19,16 @@ var generateCmd = &cobra.Command{
 
 func runGenerateCmd(ctx context.Context) error {
 	var projectConfig config.ProjectConfig
-	p := tea.NewProgram(tui.InitialModel(&projectConfig))
-	if _, err := p.Run(); err != nil {
-		return err
-	}
+	//p := tea.NewProgram(tui.InitialModel(&projectConfig))
+	//if _, err := p.Run(); err != nil {
+	//	return err
+	//}
+
+	projectConfig.ProjectName = "proj1"
+	projectConfig.ModuleName = "github.com/user/proj1"
+	projectConfig.OpenAPIPath = "server.yml"
+	projectConfig.UsePostgres = true
+	projectConfig.UseRedis = true
 
 	return generator.GenerateProject(ctx, &projectConfig)
 }
