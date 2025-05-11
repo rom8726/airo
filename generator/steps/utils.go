@@ -29,3 +29,11 @@ func serverCmdDir(cfg *config.ProjectConfig) string {
 func restAPIDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "internal", "api", "rest")
 }
+
+func pkgDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(projectDir(cfg), "pkg")
+}
+
+func pkgHttpServerDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(pkgDir(cfg), "httpserver")
+}
