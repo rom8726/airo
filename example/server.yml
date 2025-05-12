@@ -6,36 +6,26 @@ info:
 servers:
   - url: http://localhost:8080/
 paths:
-  /api/v1/users/sign-in:
+  /api/v1/test:
     post:
-      summary: User sign-in
-      description: Authenticate user with credentials to generate JWT access and refresh tokens.
-      operationId: userSignIn
+      summary: Test endpoint
+      description: Test endpoint
+      operationId: test
+      security:
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SignInRequest'
+              $ref: '#/components/schemas/TestRequest'
       responses:
         '200':
-          description: Successfully authenticated. Returns access and refresh tokens.
+          description: Successfully processed.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SignInResponse'
-        '400':
-          description: Invalid input provided.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Invalid credentials.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/TestResponse'
         '500':
           description: Internal server error.
           content:
@@ -49,36 +39,31 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    SignInRequest:
+    TestRequest:
       type: object
       required:
-        - login
-        - password
+        - field1
+        - field2
       properties:
-        login:
+        field1:
           type: string
-          description: The username of the user.
-          example: admin
+          description: Field1.
+          example: field1
           minLength: 1
-        password:
+        field2:
           type: string
-          description: The password of the user.
-          example: mySecurePassword123
+          description: Field2.
+          example: field2
           minLength: 1
 
-    SignInResponse:
+    TestResponse:
       type: object
       required:
-        - access_token
-        - refresh_token
+        - data
       properties:
-        access_token:
+        data:
           type: string
-          description: 'JWT token for accessing protected resources.'
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        refresh_token:
-          type: string
-          description: 'Long-lived JWT token for refreshing access.'
+          description: 'Response data.'
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
     ErrorResponse:
