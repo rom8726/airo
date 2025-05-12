@@ -105,7 +105,16 @@ func (app *App) newAPIServer() (*httpserver.Server, error) {
 		return nil, fmt.Errorf("resolve REST API service component: %w", err)
 	}
 
+	{{ if .HasSecurityHandler }}
+	var securityHandler generatedserver.SecurityHandler
+	if err := app.container.Resolve(&securityHandler); err != nil {
+		return nil, fmt.Errorf("resolve API security handler component: %w", err)
+	}
+
+	genServer, err := generatedserver.NewServer(restAPI, securityHandler)
+	{{ else }}
 	genServer, err := generatedserver.NewServer(restAPI)
+	{{ end }}
 	if err != nil {
 		return nil, fmt.Errorf("create API server: %w", err)
 	}

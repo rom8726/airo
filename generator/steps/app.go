@@ -11,6 +11,10 @@ import (
 	"github.com/rom8726/airo/config"
 )
 
+const (
+	securityHandlerFileName = "oas_security_gen.go"
+)
+
 //go:embed templates/app.go.tmpl
 var tmplAppGo string
 
@@ -39,14 +43,20 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 
 	type renderData struct {
-		Module      string
-		UsePostgres bool
-		UseRedis    bool
+		Module             string
+		UsePostgres        bool
+		UseRedis           bool
+		HasSecurityHandler bool
 	}
 	data := renderData{
 		Module:      cfg.ModuleName,
 		UsePostgres: cfg.UsePostgres,
 		UseRedis:    cfg.UseRedis,
+	}
+
+	securityHandlerPath := filepath.Join(openapiDir(cfg), securityHandlerFileName)
+	if _, err := os.Stat(securityHandlerPath); err == nil {
+		data.HasSecurityHandler = true
 	}
 
 	if err := tmpl.Execute(fApp, data); err != nil {
