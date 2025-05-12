@@ -8,14 +8,14 @@ type Redis struct {
 {{ end }}
 
 {{ define "constructor" }}
-func newRedisClient(cfg *config.Redis) (*redis.Client, error) {
+func newRedisClient(ctx context.Context, cfg *config.Redis) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     net.JoinHostPort(cfg.Host, fmt.Sprint(cfg.Port)),
 		Password: cfg.Password,
 		DB:       cfg.DB,
 	})
 
-	err := client.Ping(context.Background()).Err()
+	err := client.Ping(ctx).Err()
 	if err != nil {
 		return nil, fmt.Errorf("ping: %w", err)
 	}
@@ -25,7 +25,7 @@ func newRedisClient(cfg *config.Redis) (*redis.Client, error) {
 {{ end }}
 
 {{ define "init_in_app_constructor" }}
-	redisClient, err := newRedisClient(&cfg.Redis)
+	redisClient, err := newRedisClient(ctx, &cfg.Redis)
 	if err != nil {
 		return nil, fmt.Errorf("create redis client: %w", err)
 	}
