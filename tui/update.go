@@ -13,6 +13,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.step {
 	case stepProjectName, stepModuleName, stepOpenAPIPath:
 		m.input, cmd = m.input.Update(msg)
+	case stepDBChoice:
+		m.dbList, cmd = m.dbList.Update(msg)
 	case stepInfraChoice:
 		m.infraList, cmd = m.infraList.Update(msg)
 	}
@@ -21,6 +23,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
+			*m.projectConfig = config.ProjectConfig{Aborted: true}
+
 			return m, tea.Quit
 		case tea.KeyEnter:
 			switch m.step {
@@ -32,39 +36,46 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case stepModuleName:
 				m.module = m.input.Value()
-				m.step = stepInfraChoice
-
-			case stepInfraChoice:
-				var infras []string
-				for _, it := range m.infraList.Items() {
-					ii := it.(infraItem)
-					if ii.used {
-						infras = append(infras, ii.title)
-					}
-				}
-
 				m.input.SetValue("")
 				m.input.Placeholder = "Path to OpenAPI spec"
 				m.step = stepOpenAPIPath
 
-			case stepOpenAPIPath:
-				m.openapiPath = m.input.Value()
+			case stepDBChoice:
+				m.step = stepInfraChoice
+
+			case stepInfraChoice:
 				m.step = stepDone
 
+			case stepOpenAPIPath:
+				m.openapiPath = m.input.Value()
+				m.step = stepDBChoice
+
 			case stepDone:
+				db := getSelectedDB(m.dbList.Items())
 				selected := getSelectedInfra(m.infraList.Items())
 				*m.projectConfig = config.ProjectConfig{
 					ProjectName: m.project,
 					ModuleName:  m.module,
 					OpenAPIPath: m.openapiPath,
-					UsePostgres: contains(selected, "Postgres"),
-					UseRedis:    contains(selected, "Redis"),
+					UsePostgres: db == postgresName,
+					UseMySQL:    db == mysqlName,
+					UseRedis:    contains(selected, redisName),
+					UseKafka:    contains(selected, kafkaName),
 				}
 
 				return m, tea.Quit
 			}
 		case tea.KeySpace:
-			if m.step == stepInfraChoice {
+			switch m.step {
+			case stepDBChoice:
+				i := m.dbList.Index()
+				for idx, it := range m.dbList.Items() {
+					if item, ok := it.(dbItem); ok {
+						item.selected = idx == i
+						m.dbList.SetItem(idx, item)
+					}
+				}
+			case stepInfraChoice:
 				i := m.infraList.Index()
 				if item, ok := m.infraList.Items()[i].(infraItem); ok {
 					item.used = !item.used
@@ -75,6 +86,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+func getSelectedDB(items []list.Item) string {
+	for _, it := range items {
+		if di, ok := it.(dbItem); ok && di.selected {
+			return di.title
+		}
+	}
+
+	return postgresName
 }
 
 func getSelectedInfra(items []list.Item) []string {

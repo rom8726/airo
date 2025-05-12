@@ -26,5 +26,9 @@ func runGenerateCmd(ctx context.Context) error {
 		return err
 	}
 
+	if projectConfig.Aborted {
+		return nil
+	}
+
 	return generator.GenerateProject(ctx, &projectConfig)
 }

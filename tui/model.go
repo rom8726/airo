@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,29 +13,23 @@ type step int
 const (
 	stepProjectName step = iota
 	stepModuleName
-	stepInfraChoice
 	stepOpenAPIPath
+	stepDBChoice
+	stepInfraChoice
 	stepDone
 )
 
-type infraItem struct {
-	title string
-	used  bool
-}
-
-func (i infraItem) Title() string {
-	checked := "[ ]"
-	if i.used {
-		checked = "[x]"
-	}
-	return fmt.Sprintf("%s %s", checked, i.title)
-}
-func (i infraItem) Description() string { return "" }
-func (i infraItem) FilterValue() string { return i.title }
+const (
+	postgresName = "PostgreSQL"
+	mysqlName    = "MySQL"
+	redisName    = "Redis"
+	kafkaName    = "Kafka"
+)
 
 type Model struct {
 	step       step
 	input      textinput.Model
+	dbList     list.Model
 	infraList  list.Model
 	confirmMsg string
 
@@ -56,9 +48,23 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	ti.CharLimit = 64
 	ti.Width = 32
 
+	// ----- DB -----
+	dbItems := []list.Item{
+		dbItem{title: postgresName, selected: true},
+		dbItem{title: mysqlName},
+	}
+	dbList := list.New(dbItems, list.NewDefaultDelegate(), 0, 0)
+	dbList.Title = "Choose database ([space] — select, [enter] — continue)"
+	dbList.SetShowStatusBar(false)
+	dbList.SetFilteringEnabled(false)
+	dbList.SetShowHelp(true)
+	dbList.SetWidth(80)
+	dbList.SetHeight(12)
+
+	// ----- Infra -----
 	items := []list.Item{
-		infraItem{title: "Postgres"},
-		infraItem{title: "Redis"},
+		infraItem{title: redisName},
+		infraItem{title: kafkaName},
 	}
 
 	infraList := list.New(items, list.NewDefaultDelegate(), 0, 0)
@@ -73,6 +79,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 		projectConfig: projectCfg,
 		step:          stepProjectName,
 		input:         ti,
+		dbList:        dbList,
 		infraList:     infraList,
 	}
 }
