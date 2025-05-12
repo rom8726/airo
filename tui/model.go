@@ -47,8 +47,9 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	dbItems := make([]list.Item, 0, len(dbInfos))
 	for _, elem := range dbInfos {
 		dbItems = append(dbItems, dbItem{
-			title: elem.Title,
-			code:  elem.Code,
+			title:    elem.Title,
+			code:     elem.Code,
+			selected: elem.Code == config.DBTypePostgres,
 		})
 	}
 
