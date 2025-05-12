@@ -3,7 +3,7 @@ package infra
 func init() {
 	addInfra("kafka", InfraInfo{
 		Code:      "kafka",
-		Title:     "kafka",
+		Title:     "Kafka",
 		Processor: &KafkaProcessor{},
 	})
 }
