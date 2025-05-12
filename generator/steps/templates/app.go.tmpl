@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"time"
 
 	"{{ .Module }}/internal/config"
@@ -17,6 +18,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rom8726/di"
 	"golang.org/x/sync/errgroup"
+	{{- range .Infras }}
+    {{ .Processor.Import }}
+    {{- end }}
 )
 
 const (
@@ -28,6 +32,9 @@ type App struct {
 	Logger *slog.Logger
 
 	{{ if .UsePostgres }}PostgresPool *pgxpool.Pool{{ end }}
+	{{- range .Infras }}
+    {{ .Processor.StructField }}
+    {{- end }}
 
 	container *di.Container
 	diApp     *di.App
@@ -44,6 +51,10 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 	}
 	{{ end }}
 
+    {{- range .Infras }}
+    {{ .Processor.InitInAppConstructor }}
+    {{- end }}
+
 	container := di.New()
 	diApp := di.NewApp(container)
 
@@ -53,6 +64,9 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 		{{ if .UsePostgres }}PostgresPool: pgPool,{{ end }}
 		container:    container,
 		diApp:        diApp,
+        {{- range .Infras }}
+        {{ .Processor.FillStructField }}
+        {{- end }}
 	}, nil
 }
 
@@ -90,11 +104,14 @@ func (app *App) Run(ctx context.Context) error {
 }
 
 func (app *App) Close() {
-	{{ if .UsePostgres }}
+	{{- if .UsePostgres }}
 	if app.PostgresPool != nil {
 		app.PostgresPool.Close()
 	}
-	{{ end }}
+	{{- end }}
+    {{- range .Infras }}
+    {{ .Processor.Close }}
+    {{- end }}
 }
 
 func (app *App) newAPIServer() (*httpserver.Server, error) {
@@ -171,7 +188,7 @@ func (app *App) newTechServer() (*httpserver.Server, error) {
 	}, nil
 }
 
-{{ if .UsePostgres }}
+{{- if .UsePostgres }}
 func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
 	pgCfg, err := pgxpool.ParseConfig(cfg.ConnStringWithPoolSize())
 	if err != nil {
@@ -194,5 +211,9 @@ func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Po
 
 	return pool, nil
 }
-{{ end }}
+{{- end }}
+
+{{- range .Infras }}
+{{ .Processor.Constructor }}
+{{- end }}
 {{ end }}

@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/rom8726/airo/config"
+	"github.com/rom8726/airo/generator/infra"
 )
 
 type step int
@@ -22,8 +23,6 @@ const (
 const (
 	postgresName = "PostgreSQL"
 	mysqlName    = "MySQL"
-	redisName    = "Redis"
-	kafkaName    = "Kafka"
 )
 
 type Model struct {
@@ -59,12 +58,16 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	dbList.SetFilteringEnabled(false)
 	dbList.SetShowHelp(true)
 	dbList.SetWidth(80)
-	dbList.SetHeight(12)
+	dbList.SetHeight(20)
 
 	// ----- Infra -----
-	items := []list.Item{
-		infraItem{title: redisName},
-		infraItem{title: kafkaName},
+	infraInfos := infra.ListInfraInfos()
+	items := make([]list.Item, 0, len(infraInfos))
+	for _, elem := range infraInfos {
+		items = append(items, infraItem{
+			title: elem.Title,
+			code:  elem.Code,
+		})
 	}
 
 	infraList := list.New(items, list.NewDefaultDelegate(), 0, 0)
@@ -73,7 +76,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	infraList.SetFilteringEnabled(false)
 	infraList.SetShowHelp(true)
 	infraList.SetWidth(80)
-	infraList.SetHeight(12)
+	infraList.SetHeight(20)
 
 	return &Model{
 		projectConfig: projectCfg,

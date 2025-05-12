@@ -63,14 +63,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = stepDBChoice
 
 			case stepDone:
-				selected := getSelectedInfra(m.infraList.Items())
 				*m.projectConfig = config.ProjectConfig{
 					ProjectName: m.project,
 					ModuleName:  m.module,
 					OpenAPIPath: m.openapiPath,
 					DB:          dbType(getSelectedDB(m.dbList.Items())),
-					UseRedis:    contains(selected, redisName),
-					UseKafka:    contains(selected, kafkaName),
+					UseInfra:    getSelectedInfraCodes(m.infraList.Items()),
 				}
 
 				return m, tea.Quit
@@ -119,12 +117,12 @@ func dbType(selectedDB string) config.DBType {
 	}
 }
 
-func getSelectedInfra(items []list.Item) []string {
+func getSelectedInfraCodes(items []list.Item) []string {
 	var result []string
 	for _, it := range items {
 		ii := it.(infraItem)
 		if ii.used {
-			result = append(result, ii.title)
+			result = append(result, ii.code)
 		}
 	}
 

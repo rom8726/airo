@@ -18,7 +18,7 @@ func (m *Model) View() string {
 	case stepInfraChoice:
 		return m.infraList.View()
 	case stepDone:
-		selected := getSelectedInfra(m.infraList.Items())
+		selected := getSelectedInfraCodes(m.infraList.Items())
 		db := getSelectedDB(m.dbList.Items())
 		return fmt.Sprintf(
 			"Project: %s\nModule: %s\nOpenAPI: %s\nDB: %s\nInfra: %s\n\n%s",

@@ -14,6 +14,5 @@ type ProjectConfig struct {
 	ModuleName  string
 	OpenAPIPath string
 	DB          DBType
-	UseRedis    bool
-	UseKafka    bool
+	UseInfra    []string
 }

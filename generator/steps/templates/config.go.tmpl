@@ -19,7 +19,9 @@ type Config struct {
 	APIServer Server `envconfig:"API_SERVER"`
 	TechServer Server `envconfig:"TECH_SERVER"`
 	{{ if .UsePostgres }}Postgres Postgres `envconfig:"POSTGRES"`{{ end }}
-	{{ if .UseRedis }}Redis Redis `envconfig:"REDIS"`{{ end }}
+	{{- range .Infras }}
+	{{ .Processor.ConfigField }}
+	{{- end }}
 }
 
 type Logger struct {
@@ -94,13 +96,9 @@ func (db *Postgres) ConnStringWithPoolSize() string {
 }
 {{ end }}
 
-{{ if .UseRedis }}
-type Redis struct {
-	Host string `envconfig:"HOST" required:"true"`
-	Port int	`envconfig:"PORT" required:"true"`
-	DB   int	`envconfig:"DB" required:"true"`
-}
-{{ end }}
+{{- range .Infras }}
+{{ .Processor.Config }}
+{{- end }}
 
 func New(filePath string) (*Config, error) {
 	cfg := &Config{}

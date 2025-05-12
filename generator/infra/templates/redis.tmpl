@@ -1,0 +1,38 @@
+{{ define "config" }}
+type Redis struct {
+	Host     string `envconfig:"HOST" required:"true"`
+	Port     int    `envconfig:"PORT" required:"true"`
+	DB       int    `envconfig:"DB" required:"true"`
+	Password string `envconfig:"PASSWORD" required:"false"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newRedisClient(cfg *config.Redis) (*redis.Client, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     net.JoinHostPort(cfg.Host, fmt.Sprint(cfg.Port)),
+		Password: cfg.Password,
+		DB:       cfg.DB,
+	})
+
+	err := client.Ping(context.Background()).Err()
+	if err != nil {
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+
+	return client, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	redisClient, err := newRedisClient(&cfg.Redis)
+	if err != nil {
+		return nil, fmt.Errorf("create redis client: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.RedisClient != nil {
+		_ = app.RedisClient.Close()
+	}
+{{ end }}

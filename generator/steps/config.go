@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/rom8726/airo/config"
+	"github.com/rom8726/airo/generator/infra"
 )
 
 //go:embed templates/config.go.tmpl
@@ -38,13 +39,18 @@ func (ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 		return fmt.Errorf("parse template \"config_go\" failed: %w", err)
 	}
 
+	infraInfos := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
+	for _, code := range cfg.UseInfra {
+		infraInfos = append(infraInfos, infra.GetInfra(code))
+	}
+
 	type renderData struct {
 		UsePostgres bool
-		UseRedis    bool
+		Infras      []infra.InfraInfo
 	}
 	data := renderData{
 		UsePostgres: cfg.DB == config.DBTypePostgres,
-		UseRedis:    cfg.UseRedis,
+		Infras:      infraInfos,
 	}
 
 	if err := tmpl.Execute(fConfig, data); err != nil {

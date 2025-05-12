@@ -6,6 +6,7 @@ import (
 
 type infraItem struct {
 	title string
+	code  string
 	used  bool
 }
 
