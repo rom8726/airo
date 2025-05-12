@@ -7,10 +7,10 @@ Spec-first Golang project scaffold generator
 - **Code generation with [ogen-go/ogen]** – type-safe request/response models & router.
 - **Dependency injection via [rom8726/di]** – constructor-based DI.
 - **Batteries included**
-  • PostgreSQL integration
-  • Redis integration (optional)
-  • Health-check, Prometheus metrics, pprof endpoints
-  • Structured logging with slog
+  - PostgreSQL integration
+  - Redis integration (optional)
+  - Health-check, Prometheus metrics, pprof endpoints
+  - Structured logging with slog
 - **CLI powered by [spf13/cobra]**
 - **12-factor config** – environment variables parsed with `envconfig`, `.env` supported.
 
