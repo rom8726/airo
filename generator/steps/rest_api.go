@@ -14,6 +14,9 @@ import (
 //go:embed templates/rest_api.go.tmpl
 var tmplApiGo string
 
+//go:embed templates/rest_api_security_handler.go.tmpl
+var tmplSecurityHandlerGo string
+
 type RestAPIStep struct{}
 
 func (RestAPIStep) Description() string {
@@ -47,6 +50,24 @@ func (RestAPIStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 
 	if err := tmpl.Execute(fApi, data); err != nil {
 		return fmt.Errorf("execute template \"api_go\" failed: %w", err)
+	}
+
+	if hasSecurityHandler(cfg) {
+		secHandlerFilePath := filepath.Join(dir, "security_handler.go")
+		fSecHandler, err := os.Create(secHandlerFilePath)
+		if err != nil {
+			return fmt.Errorf("create file %q failed: %w", secHandlerFilePath, err)
+		}
+		defer fSecHandler.Close()
+
+		tmpl, err := template.New("security_handler").Parse(tmplSecurityHandlerGo)
+		if err != nil {
+			return fmt.Errorf("parse template \"security_handler\" failed: %w", err)
+		}
+
+		if err := tmpl.Execute(fSecHandler, data); err != nil {
+			return fmt.Errorf("execute template \"security_handler\" failed: %w", err)
+		}
 	}
 
 	return nil

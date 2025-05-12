@@ -39,10 +39,12 @@ func (ServerCmdStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 
 	type RenderData struct {
-		Module string
+		Module             string
+		HasSecurityHandler bool
 	}
 	data := RenderData{
-		Module: cfg.ModuleName,
+		Module:             cfg.ModuleName,
+		HasSecurityHandler: hasSecurityHandler(cfg),
 	}
 
 	if err := tmpl.Execute(fServer, data); err != nil {

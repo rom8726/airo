@@ -1,0 +1,14 @@
+package rest
+
+import (
+	generatedapi "{{ .Module }}/internal/generated/server"
+)
+
+var _ generatedapi.SecurityHandler = (*SecurityHandler)(nil) // TODO: implement!
+
+type SecurityHandler struct {
+}
+
+func NewSecurityHandler() *SecurityHandler {
+	return &SecurityHandler{}
+}

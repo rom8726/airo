@@ -49,14 +49,10 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 		HasSecurityHandler bool
 	}
 	data := renderData{
-		Module:      cfg.ModuleName,
-		UsePostgres: cfg.DB == config.DBTypePostgres,
-		UseRedis:    cfg.UseRedis,
-	}
-
-	securityHandlerPath := filepath.Join(openapiDir(cfg), securityHandlerFileName)
-	if _, err := os.Stat(securityHandlerPath); err == nil {
-		data.HasSecurityHandler = true
+		Module:             cfg.ModuleName,
+		UsePostgres:        cfg.DB == config.DBTypePostgres,
+		UseRedis:           cfg.UseRedis,
+		HasSecurityHandler: hasSecurityHandler(cfg),
 	}
 
 	if err := tmpl.Execute(fApp, data); err != nil {

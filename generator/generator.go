@@ -12,8 +12,8 @@ func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 	steps := []Step{
 		steps.RootDirStep{},
 		steps.GoModStep{},
-		steps.PkgStep{},
 		steps.OGenStep{},
+		steps.PkgStep{},
 		steps.ConfigStep{},
 		steps.RestAPIStep{},
 		steps.AppStep{},

@@ -1,6 +1,7 @@
 package steps
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/rom8726/airo/config"
@@ -44,4 +45,14 @@ func specsDir(cfg *config.ProjectConfig) string {
 
 func serverSpecPath(cfg *config.ProjectConfig) string {
 	return filepath.Join(specsDir(cfg), "server.yml")
+}
+
+func securityHandlerPath(cfg *config.ProjectConfig) string {
+	return filepath.Join(openapiDir(cfg), securityHandlerFileName)
+}
+
+func hasSecurityHandler(cfg *config.ProjectConfig) bool {
+	_, err := os.Stat(securityHandlerPath(cfg))
+
+	return !os.IsNotExist(err)
 }
