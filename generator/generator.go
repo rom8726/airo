@@ -19,6 +19,7 @@ func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 		steps.AppStep{},
 		steps.ServerCmdStep{},
 		steps.MainGoStep{},
+		steps.SpecsStep{},
 	}
 
 	for _, step := range steps {
