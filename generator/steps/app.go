@@ -50,7 +50,7 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 	data := renderData{
 		Module:      cfg.ModuleName,
-		UsePostgres: cfg.UsePostgres,
+		UsePostgres: cfg.DB == config.DBTypePostgres,
 		UseRedis:    cfg.UseRedis,
 	}
 

@@ -43,7 +43,7 @@ func (ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 		UseRedis    bool
 	}
 	data := renderData{
-		UsePostgres: cfg.UsePostgres,
+		UsePostgres: cfg.DB == config.DBTypePostgres,
 		UseRedis:    cfg.UseRedis,
 	}
 

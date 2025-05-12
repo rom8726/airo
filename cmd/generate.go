@@ -50,6 +50,9 @@ func validateProjectConfig(projectConfig *config.ProjectConfig) error {
 	if projectConfig.ModuleName == "" {
 		return fmt.Errorf("module name is required")
 	}
+	if projectConfig.DB == config.DBTypeUnknown {
+		return fmt.Errorf("db type is required")
+	}
 
 	dir := filepath.Join(".", projectConfig.ProjectName)
 	if _, err := os.Stat(dir); err == nil {

@@ -1,0 +1,89 @@
+openapi: 3.0.3
+info:
+  title: Test service
+  description: API for test service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/
+paths:
+  /api/v1/users/sign-in:
+    post:
+      summary: User sign-in
+      description: Authenticate user with credentials to generate JWT access and refresh tokens.
+      operationId: userSignIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+      responses:
+        '200':
+          description: Successfully authenticated. Returns access and refresh tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignInResponse'
+        '400':
+          description: Invalid input provided.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SignInRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          description: The username of the user.
+          example: admin
+          minLength: 1
+        password:
+          type: string
+          description: The password of the user.
+          example: mySecurePassword123
+          minLength: 1
+
+    SignInResponse:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+      properties:
+        access_token:
+          type: string
+          description: 'JWT token for accessing protected resources.'
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: 'Long-lived JWT token for refreshing access.'
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    ErrorResponse:
+      type: object
+      properties:
+        error_message:
+          type: string
+          description: Error message.

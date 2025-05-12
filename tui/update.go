@@ -30,12 +30,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.step {
 			case stepProjectName:
 				m.project = m.input.Value()
+				if m.project == "" {
+					return m, nil
+				}
+
 				m.input.SetValue("")
 				m.input.Placeholder = "module name (e.g. github.com/user/project)"
 				m.step = stepModuleName
 
 			case stepModuleName:
 				m.module = m.input.Value()
+				if m.module == "" {
+					return m, nil
+				}
+
 				m.input.SetValue("")
 				m.input.Placeholder = "Path to OpenAPI spec"
 				m.step = stepOpenAPIPath
@@ -48,17 +56,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case stepOpenAPIPath:
 				m.openapiPath = m.input.Value()
+				if m.openapiPath == "" {
+					return m, nil
+				}
+
 				m.step = stepDBChoice
 
 			case stepDone:
-				db := getSelectedDB(m.dbList.Items())
 				selected := getSelectedInfra(m.infraList.Items())
 				*m.projectConfig = config.ProjectConfig{
 					ProjectName: m.project,
 					ModuleName:  m.module,
 					OpenAPIPath: m.openapiPath,
-					UsePostgres: db == postgresName,
-					UseMySQL:    db == mysqlName,
+					DB:          dbType(getSelectedDB(m.dbList.Items())),
 					UseRedis:    contains(selected, redisName),
 					UseKafka:    contains(selected, kafkaName),
 				}
@@ -96,6 +106,17 @@ func getSelectedDB(items []list.Item) string {
 	}
 
 	return postgresName
+}
+
+func dbType(selectedDB string) config.DBType {
+	switch selectedDB {
+	case postgresName:
+		return config.DBTypePostgres
+	case mysqlName:
+		return config.DBTypeMySQL
+	default:
+		return config.DBTypeUnknown
+	}
 }
 
 func getSelectedInfra(items []list.Item) []string {
