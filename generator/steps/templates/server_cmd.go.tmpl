@@ -53,7 +53,7 @@ func runServerCommand(ctx context.Context, _ []string) error {
 
 	// TODO: register service components
 	app.RegisterComponent(rest.New)
-	app.RegisterComponent(rest.NewSecurityHandler)
+	{{ if .HasSecurityHandler }}app.RegisterComponent(rest.NewSecurityHandler){{ end }}
 
 	if err := app.Run(ctx); err != nil {
 		return fmt.Errorf("run app: %w", err)
