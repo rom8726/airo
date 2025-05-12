@@ -20,11 +20,6 @@ const (
 	stepDone
 )
 
-const (
-	postgresName = "PostgreSQL"
-	mysqlName    = "MySQL"
-)
-
 type Model struct {
 	step       step
 	input      textinput.Model
@@ -48,10 +43,15 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	ti.Width = 32
 
 	// ----- DB -----
-	dbItems := []list.Item{
-		dbItem{title: postgresName, selected: true},
-		dbItem{title: mysqlName},
+	dbInfos := infra.ListDBInfos()
+	dbItems := make([]list.Item, 0, len(dbInfos))
+	for _, elem := range dbInfos {
+		dbItems = append(dbItems, dbItem{
+			title: elem.Title,
+			code:  elem.Code,
+		})
 	}
+
 	dbList := list.New(dbItems, list.NewDefaultDelegate(), 0, 0)
 	dbList.Title = "Choose database ([space] — select, [enter] — continue)"
 	dbList.SetShowStatusBar(false)

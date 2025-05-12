@@ -13,11 +13,11 @@ import (
 	generatedserver "{{ .Module }}/internal/generated/server"
 	"{{ .Module }}/pkg/httpserver"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rom8726/di"
 	"golang.org/x/sync/errgroup"
+	{{ .DB.Processor.Import }}
 	{{- range .Infras }}
     {{ .Processor.Import }}
     {{- end }}
@@ -31,7 +31,7 @@ type App struct {
 	Config *config.Config
 	Logger *slog.Logger
 
-	{{ if .UsePostgres }}PostgresPool *pgxpool.Pool{{ end }}
+	{{ .DB.Processor.StructField }}
 	{{- range .Infras }}
     {{ .Processor.StructField }}
     {{- end }}
@@ -44,12 +44,7 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 	ctx, cancel := context.WithTimeout(ctx, ctxTimeout)
 	defer cancel()
 
-	{{ if .UsePostgres }}
-	pgPool, err := newPostgresConnPool(ctx, &cfg.Postgres)
-	if err != nil {
-		return nil, fmt.Errorf("create postgres pool: %w", err)
-	}
-	{{ end }}
+	{{ .DB.Processor.InitInAppConstructor }}
 
     {{- range .Infras }}
     {{ .Processor.InitInAppConstructor }}
@@ -61,9 +56,9 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 	return &App{
 		Config:       cfg,
 		Logger:       logger,
-		{{ if .UsePostgres }}PostgresPool: pgPool,{{ end }}
 		container:    container,
 		diApp:        diApp,
+		{{ .DB.Processor.FillStructField }}
         {{- range .Infras }}
         {{ .Processor.FillStructField }}
         {{- end }}
@@ -104,11 +99,7 @@ func (app *App) Run(ctx context.Context) error {
 }
 
 func (app *App) Close() {
-	{{- if .UsePostgres }}
-	if app.PostgresPool != nil {
-		app.PostgresPool.Close()
-	}
-	{{- end }}
+	{{ .DB.Processor.Close }}
     {{- range .Infras }}
     {{ .Processor.Close }}
     {{- end }}
@@ -188,30 +179,7 @@ func (app *App) newTechServer() (*httpserver.Server, error) {
 	}, nil
 }
 
-{{- if .UsePostgres }}
-func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
-	pgCfg, err := pgxpool.ParseConfig(cfg.ConnStringWithPoolSize())
-	if err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
-	}
-
-	pgCfg.MaxConnLifetime = cfg.ConnMaxLifetime
-	pgCfg.MaxConnLifetimeJitter = time.Second * 5
-	pgCfg.MaxConnIdleTime = cfg.MaxIdleConnTime
-	pgCfg.HealthCheckPeriod = time.Second * 5
-
-	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := pool.Ping(ctx); err != nil {
-		return nil, fmt.Errorf("ping: %w", err)
-	}
-
-	return pool, nil
-}
-{{- end }}
+{{ .DB.Processor.Constructor }}
 
 {{- range .Infras }}
 {{ .Processor.Constructor }}

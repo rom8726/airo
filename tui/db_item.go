@@ -6,6 +6,7 @@ import (
 
 type dbItem struct {
 	title    string
+	code     string
 	selected bool
 }
 

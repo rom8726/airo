@@ -50,13 +50,13 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 
 	type renderData struct {
 		Module             string
-		UsePostgres        bool
+		DB                 infra.DBInfo
 		Infras             []infra.InfraInfo
 		HasSecurityHandler bool
 	}
 	data := renderData{
 		Module:             cfg.ModuleName,
-		UsePostgres:        cfg.DB == config.DBTypePostgres,
+		DB:                 infra.GetDB(cfg.DB),
 		Infras:             infraInfos,
 		HasSecurityHandler: hasSecurityHandler(cfg),
 	}

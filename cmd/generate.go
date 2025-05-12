@@ -50,7 +50,7 @@ func validateProjectConfig(projectConfig *config.ProjectConfig) error {
 	if projectConfig.ModuleName == "" {
 		return fmt.Errorf("module name is required")
 	}
-	if projectConfig.DB == config.DBTypeUnknown {
+	if projectConfig.DB == "" {
 		return fmt.Errorf("db type is required")
 	}
 

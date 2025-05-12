@@ -1,11 +1,7 @@
 package config
 
-type DBType string
-
 const (
-	DBTypeUnknown  DBType = ""
-	DBTypePostgres DBType = "postgres"
-	DBTypeMySQL    DBType = "mysql"
+	DBTypePostgres = "postgresql"
 )
 
 type ProjectConfig struct {
@@ -13,6 +9,6 @@ type ProjectConfig struct {
 	ProjectName string
 	ModuleName  string
 	OpenAPIPath string
-	DB          DBType
+	DB          string
 	UseInfra    []string
 }

@@ -1,0 +1,83 @@
+{{ define "config" }}
+type Postgres struct {
+	User            string        `envconfig:"USER" required:"true"`
+	Password        string        `envconfig:"PASSWORD" required:"true"`
+	Host            string        `envconfig:"HOST" required:"true"`
+	Database        string        `envconfig:"DATABASE" required:"true"`
+	MaxIdleConnTime time.Duration `envconfig:"MAX_IDLE_CONN_TIME" default:"5m"`
+	MaxConns        int           `envconfig:"MAX_CONNS" default:"20"`
+	ConnMaxLifetime time.Duration `envconfig:"CONN_MAX_LIFETIME" default:"10m"`
+}
+
+func (db *Postgres) ConnString() string {
+	var user *url.Userinfo
+
+	if db.User != "" {
+		var pass string
+
+		if db.Password != "" {
+			pass = db.Password
+		}
+
+		user = url.UserPassword(db.User, pass)
+	}
+
+	params := url.Values{}
+	params.Set("sslmode", "disable")
+	params.Set("connect_timeout", "10")
+
+	uri := url.URL{
+		Scheme:   "postgres",
+		User:     user,
+		Host:     db.Host,
+		Path:     db.Database,
+		RawQuery: params.Encode(),
+	}
+
+	return uri.String()
+}
+
+func (db *Postgres) ConnStringWithPoolSize() string {
+	connString := db.ConnString()
+
+	return connString + fmt.Sprintf("&pool_max_conns=%d", db.MaxConns)
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Pool, error) {
+	pgCfg, err := pgxpool.ParseConfig(cfg.ConnStringWithPoolSize())
+	if err != nil {
+		return nil, fmt.Errorf("parse config: %w", err)
+	}
+
+	pgCfg.MaxConnLifetime = cfg.ConnMaxLifetime
+	pgCfg.MaxConnLifetimeJitter = time.Second * 5
+	pgCfg.MaxConnIdleTime = cfg.MaxIdleConnTime
+	pgCfg.HealthCheckPeriod = time.Second * 5
+
+	pool, err := pgxpool.NewWithConfig(ctx, pgCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+
+	return pool, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	pgPool, err := newPostgresConnPool(ctx, &cfg.Postgres)
+	if err != nil {
+		return nil, fmt.Errorf("create postgres pool: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.PostgresPool != nil {
+		app.PostgresPool.Close()
+	}
+{{ end }}

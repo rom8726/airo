@@ -67,7 +67,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					ProjectName: m.project,
 					ModuleName:  m.module,
 					OpenAPIPath: m.openapiPath,
-					DB:          dbType(getSelectedDB(m.dbList.Items())),
+					DB:          getSelectedDB(m.dbList.Items()),
 					UseInfra:    getSelectedInfraCodes(m.infraList.Items()),
 				}
 
@@ -99,22 +99,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func getSelectedDB(items []list.Item) string {
 	for _, it := range items {
 		if di, ok := it.(dbItem); ok && di.selected {
-			return di.title
+			return di.code
 		}
 	}
 
-	return postgresName
-}
-
-func dbType(selectedDB string) config.DBType {
-	switch selectedDB {
-	case postgresName:
-		return config.DBTypePostgres
-	case mysqlName:
-		return config.DBTypeMySQL
-	default:
-		return config.DBTypeUnknown
-	}
+	return string(config.DBTypePostgres)
 }
 
 func getSelectedInfraCodes(items []list.Item) []string {
@@ -127,14 +116,4 @@ func getSelectedInfraCodes(items []list.Item) []string {
 	}
 
 	return result
-}
-
-func contains(list []string, elem string) bool {
-	for _, a := range list {
-		if a == elem {
-			return true
-		}
-	}
-
-	return false
 }

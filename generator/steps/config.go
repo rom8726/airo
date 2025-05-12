@@ -45,12 +45,12 @@ func (ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 
 	type renderData struct {
-		UsePostgres bool
-		Infras      []infra.InfraInfo
+		DB     infra.DBInfo
+		Infras []infra.InfraInfo
 	}
 	data := renderData{
-		UsePostgres: cfg.DB == config.DBTypePostgres,
-		Infras:      infraInfos,
+		DB:     infra.GetDB(cfg.DB),
+		Infras: infraInfos,
 	}
 
 	if err := tmpl.Execute(fConfig, data); err != nil {
