@@ -20,6 +20,7 @@ func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 		steps.ServerCmdStep{},
 		steps.MainGoStep{},
 		steps.SpecsStep{},
+		steps.DockerfileStep{},
 		steps.DevEnvStep{},
 	}
 

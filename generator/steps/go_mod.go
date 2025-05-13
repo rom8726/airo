@@ -29,7 +29,7 @@ func (GoModStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	goModFilePath := filepath.Join(projectDir(cfg), "go.mod")
 	fGoMod, err := os.Create(goModFilePath)
 	if err != nil {
-		return fmt.Errorf("create file \"%s\" failed: %w", goModFilePath, err)
+		return fmt.Errorf("create file %q failed: %w", goModFilePath, err)
 	}
 	defer fGoMod.Close()
 
