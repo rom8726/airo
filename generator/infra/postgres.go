@@ -18,36 +18,75 @@ func init() {
 var tmplPostgres string
 
 type PostgresProcessor struct {
+	cfg *config.ProjectConfig
 }
 
-func (p PostgresProcessor) Import() string {
+func (p *PostgresProcessor) SetConfig(cfg *config.ProjectConfig) {
+	p.cfg = cfg
+}
+
+func (p *PostgresProcessor) Import() string {
 	return "\"github.com/jackc/pgx/v5/pgxpool\""
 }
 
-func (p PostgresProcessor) Config() string {
-	return render(tmplPostgres, "config", nil)
+func (p *PostgresProcessor) Config() string {
+	renderData := struct {
+		ProjectName string
+	}{
+		ProjectName: p.cfg.ProjectName,
+	}
+
+	return render(tmplPostgres, "config", renderData)
 }
 
-func (p PostgresProcessor) ConfigField() string {
+func (p *PostgresProcessor) ConfigField() string {
 	return "Postgres Postgres `envconfig:\"POSTGRES\"`"
 }
 
-func (p PostgresProcessor) Constructor() string {
-	return render(tmplPostgres, "constructor", nil)
+func (p *PostgresProcessor) Constructor() string {
+	renderData := struct {
+		ProjectName string
+	}{
+		ProjectName: p.cfg.ProjectName,
+	}
+
+	return render(tmplPostgres, "constructor", renderData)
 }
 
-func (p PostgresProcessor) InitInAppConstructor() string {
-	return render(tmplPostgres, "init_in_app_constructor", nil)
+func (p *PostgresProcessor) InitInAppConstructor() string {
+	renderData := struct {
+		ProjectName string
+	}{
+		ProjectName: p.cfg.ProjectName,
+	}
+
+	return render(tmplPostgres, "init_in_app_constructor", renderData)
 }
 
-func (p PostgresProcessor) StructField() string {
+func (p *PostgresProcessor) StructField() string {
 	return "PostgresPool *pgxpool.Pool"
 }
 
-func (p PostgresProcessor) FillStructField() string {
+func (p *PostgresProcessor) FillStructField() string {
 	return "PostgresPool: pgPool,"
 }
 
-func (p PostgresProcessor) Close() string {
-	return render(tmplPostgres, "close", nil)
+func (p *PostgresProcessor) Close() string {
+	renderData := struct {
+		ProjectName string
+	}{
+		ProjectName: p.cfg.ProjectName,
+	}
+
+	return render(tmplPostgres, "close", renderData)
+}
+
+func (p *PostgresProcessor) DockerCompose() string {
+	renderData := struct {
+		ProjectName string
+	}{
+		ProjectName: p.cfg.ProjectName,
+	}
+
+	return render(tmplPostgres, "docker_compose", renderData)
 }

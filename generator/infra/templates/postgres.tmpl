@@ -81,3 +81,19 @@ func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Po
 		app.PostgresPool.Close()
 	}
 {{ end }}
+
+{{ define "docker_compose" }}
+  pg-{{ .ProjectName }}:
+    image: postgres:16
+    container_name: pg-{{ .ProjectName }}
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+      PGDATA: /var/lib/postgresql/data/main
+    volumes:
+      - "postgresql_{{ .ProjectName }}:/var/lib/postgresql/data/main"
+    ports:
+      - "5432:5432"
+{{ end }}

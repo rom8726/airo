@@ -51,6 +51,10 @@ func securityHandlerPath(cfg *config.ProjectConfig) string {
 	return filepath.Join(openapiDir(cfg), securityHandlerFileName)
 }
 
+func devDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(projectDir(cfg), "dev")
+}
+
 func hasSecurityHandler(cfg *config.ProjectConfig) bool {
 	_, err := os.Stat(securityHandlerPath(cfg))
 

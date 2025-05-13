@@ -11,6 +11,7 @@ import (
 
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/generator"
+	"github.com/rom8726/airo/generator/infra"
 	"github.com/rom8726/airo/tui"
 )
 
@@ -36,6 +37,8 @@ func runGenerateCmd(ctx context.Context) error {
 	if err := validateProjectConfig(&projectConfig); err != nil {
 		return err
 	}
+
+	infraSetConfig(&projectConfig)
 
 	return generator.GenerateProject(ctx, &projectConfig)
 }
@@ -64,4 +67,12 @@ func validateProjectConfig(projectConfig *config.ProjectConfig) error {
 	}
 
 	return nil
+}
+
+func infraSetConfig(cfg *config.ProjectConfig) {
+	infra.GetDB(cfg.DB).Processor.SetConfig(cfg)
+
+	for _, item := range infra.ListInfraInfos() {
+		item.Processor.SetConfig(cfg)
+	}
 }

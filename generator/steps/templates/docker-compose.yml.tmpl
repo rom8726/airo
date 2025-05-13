@@ -1,0 +1,15 @@
+{{- define "docker_compose" -}}
+version: '3.8'
+
+services:
+{{- .DB.Processor.DockerCompose -}}
+{{- range .Infras }}
+{{ .Processor.DockerCompose }}
+{{- end -}}
+
+volumes:
+    {{ .DB.Code }}_{{ .ProjectName }}:
+    {{- range .Infras }}
+    {{ .Code }}_{{ $.ProjectName }}:
+    {{- end -}}
+{{ end }}
