@@ -2,7 +2,23 @@
 version: '3.8'
 
 services:
-{{- .DB.Processor.DockerCompose -}}
+  {{ .ProjectName }}-server:
+    container_name: {{ .ProjectName }}-server
+    build:
+      context: ../
+      target: prod
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    command: ["/bin/app", "run"]
+    depends_on:
+      - {{ .ProjectName }}-{{ .DB.Code }}
+      {{- range .Infras }}
+      - {{ $.ProjectName }}-{{ .Code }}
+      {{- end }}
+
+{{ .DB.Processor.DockerCompose -}}
 {{- range .Infras }}
 {{ .Processor.DockerCompose }}
 {{- end -}}

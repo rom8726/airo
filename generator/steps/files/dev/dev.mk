@@ -1,4 +1,4 @@
-_COMPOSE=docker compose -f dev/docker-compose.yml --project-name ${NAMESPACE}
+_COMPOSE=docker compose -f dev/docker-compose.yml --project-name ${NAMESPACE} --env-file dev/compose.env
 
 dev-up: ## Up the environment in docker compose
 	${_COMPOSE} up -d

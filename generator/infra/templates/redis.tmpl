@@ -38,9 +38,9 @@ func newRedisClient(ctx context.Context, cfg *config.Redis) (*redis.Client, erro
 {{ end }}
 
 {{ define "docker_compose" }}
-  redis-{{ .ProjectName }}:
+  {{ .ProjectName }}-redis:
     image: 'redis'
-    container_name: redis-{{ .ProjectName }}
+    container_name: {{ .ProjectName }}-redis
     volumes:
       - "redis_{{ .ProjectName }}:/data"
     ports:

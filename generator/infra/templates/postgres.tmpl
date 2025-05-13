@@ -83,9 +83,9 @@ func newPostgresConnPool(ctx context.Context, cfg *config.Postgres) (*pgxpool.Po
 {{ end }}
 
 {{ define "docker_compose" }}
-  pg-{{ .ProjectName }}:
+  {{ .ProjectName }}-postgresql:
     image: postgres:16
-    container_name: pg-{{ .ProjectName }}
+    container_name: {{ .ProjectName }}-postgresql
     restart: always
     environment:
       POSTGRES_USER: user
