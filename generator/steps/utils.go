@@ -16,7 +16,11 @@ func internalDir(cfg *config.ProjectConfig) string {
 }
 
 func openapiDir(cfg *config.ProjectConfig) string {
-	return filepath.Join(projectDir(cfg), "internal", "generated", "server")
+	return filepath.Join(projectDir(cfg), openapiRelDir())
+}
+
+func openapiRelDir() string {
+	return filepath.Join("internal", "generated", "server")
 }
 
 func configDir(cfg *config.ProjectConfig) string {

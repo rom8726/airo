@@ -24,8 +24,7 @@ func (OGenStep) Do(ctx context.Context, cfg *config.ProjectConfig) error {
 		return fmt.Errorf("mkdir failed: %w", err)
 	}
 
-	specPath := cfg.OpenAPIPath
-	targetSpecPath := filepath.Join("/workspace", specPath)
+	targetSpecPath := filepath.Join("/workspace", serverSpecPath(cfg))
 	targetOutputDir := filepath.Join("/workspace", outputDir)
 
 	cmd := exec.CommandContext(
