@@ -1,6 +1,6 @@
 {{- define "makefile" -}}
 NAMESPACE={{ .ProjectName }}
-GOCI_VERSION=v2.1.6
+GOCI_VERSION=v1.64.8
 MOCKERY_VERSION=v3.2.5
 TOOLS_DIR=dev/tools
 TOOLS_DIR_ABS=${PWD}/${TOOLS_DIR}
@@ -78,4 +78,8 @@ build: ## Build binary
 .PHONY: mocks
 mocks: .install-mockery ## Generate mocks with mockery
 	mockery
+
+.PHONY: format
+format: ## Format go code
+	go fmt ./...
 {{ end }}
