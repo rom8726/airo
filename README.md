@@ -122,10 +122,10 @@ make dev-down  # docker compose down
 ```
 ## Available endpoints
 
-- `GET /ping` – from your OpenAPI spec
-- `GET /health` – liveness probe
-- `GET /metrics` – Prometheus metrics
-- `GET /debug/pprof/*` – pprof profiles
+- `GET :8080/ping` – from your OpenAPI spec
+- `GET :8081/health` – liveness probe
+- `GET :8081/metrics` – Prometheus metrics
+- `GET :8081/debug/pprof/*` – pprof profiles
 
 ---
 
