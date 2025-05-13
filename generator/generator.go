@@ -22,6 +22,7 @@ func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 		steps.MainGoStep{},
 		steps.DockerfileStep{},
 		steps.DevEnvStep{},
+		steps.GolangCIStep{},
 	}
 
 	for _, step := range steps {
