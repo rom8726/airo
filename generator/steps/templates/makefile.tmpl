@@ -48,7 +48,7 @@ help: ## Print this message
 setup: .install-linter .install-mockery ## Setup development environment
 	@echo "\nCreate .env files in dev/ directory"
 	@cp dev/config.env.example dev/config.env
-	@cp dev/config.compose.env.example dev/config.compose.env
+	@cp dev/compose.env.example dev/compose.env
 
 	@echo
 	@if [ $$? -ne 0 ] ; then \
