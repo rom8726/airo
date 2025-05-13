@@ -18,6 +18,12 @@ var tmplMakefile string
 //go:embed templates/docker-compose.yml.tmpl
 var tmplDockerComposeYml string
 
+//go:embed templates/compose.env.example.tmpl
+var tmplComposeEnv string
+
+//go:embed templates/config.env.example.tmpl
+var tmplConfigEnv string
+
 //go:embed files/dev/dev.mk
 var devMkFile []byte
 
@@ -84,6 +90,14 @@ func doEnvDir(cfg *config.ProjectConfig) error {
 		return err
 	}
 
+	if err := doConfigEnvExample(cfg); err != nil {
+		return err
+	}
+
+	if err := doComposeEnvExample(cfg); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -120,6 +134,78 @@ func doDockerComposeYml(cfg *config.ProjectConfig) error {
 
 	if err := tmpl.Execute(fDockerComposeYml, data); err != nil {
 		return fmt.Errorf("execute template \"docker_compose\" failed: %w", err)
+	}
+
+	return nil
+}
+
+func doConfigEnvExample(cfg *config.ProjectConfig) error {
+	tmpl, err := template.New("config_env").Parse(tmplConfigEnv)
+	if err != nil {
+		return fmt.Errorf("parse template \"config_env\" failed: %w", err)
+	}
+
+	configEnvPath := filepath.Join(devDir(cfg), "config.env.example")
+	fConfigEnv, err := os.Create(configEnvPath)
+	if err != nil {
+		return fmt.Errorf("create file %q failed: %w", configEnvPath, err)
+	}
+	defer fConfigEnv.Close()
+
+	type renderData struct {
+		DB     infra.DBInfo
+		Infras []infra.InfraInfo
+	}
+
+	infras := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
+	for _, code := range cfg.UseInfra {
+		item := infra.GetInfra(code)
+		infras = append(infras, item)
+	}
+
+	data := renderData{
+		DB:     infra.GetDB(cfg.DB),
+		Infras: infras,
+	}
+
+	if err := tmpl.Execute(fConfigEnv, data); err != nil {
+		return fmt.Errorf("execute template \"config_env\" failed: %w", err)
+	}
+
+	return nil
+}
+
+func doComposeEnvExample(cfg *config.ProjectConfig) error {
+	tmpl, err := template.New("compose_env").Parse(tmplComposeEnv)
+	if err != nil {
+		return fmt.Errorf("parse template \"compose_env\" failed: %w", err)
+	}
+
+	composeEnvPath := filepath.Join(devDir(cfg), "compose.env.example")
+	fComposeEnv, err := os.Create(composeEnvPath)
+	if err != nil {
+		return fmt.Errorf("create file %q failed: %w", composeEnvPath, err)
+	}
+	defer fComposeEnv.Close()
+
+	type renderData struct {
+		DB     infra.DBInfo
+		Infras []infra.InfraInfo
+	}
+
+	infras := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
+	for _, code := range cfg.UseInfra {
+		item := infra.GetInfra(code)
+		infras = append(infras, item)
+	}
+
+	data := renderData{
+		DB:     infra.GetDB(cfg.DB),
+		Infras: infras,
+	}
+
+	if err := tmpl.Execute(fComposeEnv, data); err != nil {
+		return fmt.Errorf("execute template \"compose_env\" failed: %w", err)
 	}
 
 	return nil

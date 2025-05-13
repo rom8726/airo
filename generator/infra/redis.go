@@ -2,8 +2,13 @@ package infra
 
 import (
 	_ "embed"
+	"fmt"
 
 	"github.com/rom8726/airo/config"
+)
+
+const (
+	redisEnvFormat = "REDIS_HOST=%s\nREDIS_PORT=6379\nREDIS_PASSWORD=password\nREDIS_DB=0"
 )
 
 func init() {
@@ -89,4 +94,16 @@ func (r *RedisProcessor) DockerCompose() string {
 	}
 
 	return render(tmplRedis, "docker_compose", renderData)
+}
+
+func (r *RedisProcessor) ComposeEnv() string {
+	host := r.cfg.ProjectName + "-redis"
+
+	return fmt.Sprintf(redisEnvFormat, host)
+}
+
+func (r *RedisProcessor) ConfigEnv() string {
+	host := "localhost"
+
+	return fmt.Sprintf(redisEnvFormat, host)
 }

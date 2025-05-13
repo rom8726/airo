@@ -16,4 +16,6 @@ type Processor interface {
 	FillStructField() string
 	Close() string
 	DockerCompose() string
+	ComposeEnv() string
+	ConfigEnv() string
 }

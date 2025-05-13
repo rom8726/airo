@@ -2,8 +2,13 @@ package infra
 
 import (
 	_ "embed"
+	"fmt"
 
 	"github.com/rom8726/airo/config"
+)
+
+const (
+	pgEnvFormat = "POSTGRES_HOST=%s\nPOSTGRES_DATABASE=db\nPOSTGRES_PASSWORD=password\nPOSTGRES_PORT=5432\nPOSTGRES_USER=user"
 )
 
 func init() {
@@ -89,4 +94,16 @@ func (p *PostgresProcessor) DockerCompose() string {
 	}
 
 	return render(tmplPostgres, "docker_compose", renderData)
+}
+
+func (p *PostgresProcessor) ComposeEnv() string {
+	host := p.cfg.ProjectName + "-postgresql"
+
+	return fmt.Sprintf(pgEnvFormat, host)
+}
+
+func (p *PostgresProcessor) ConfigEnv() string {
+	host := "localhost"
+
+	return fmt.Sprintf(pgEnvFormat, host)
 }
