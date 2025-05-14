@@ -26,3 +26,4 @@ go.work.sum
 .vscode
 
 proj1/
+bin/

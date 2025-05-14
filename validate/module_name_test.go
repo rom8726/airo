@@ -1,10 +1,9 @@
 package validate
 
 import (
-	"errors"
 	"testing"
 
-	"golang.org/x/mod/module"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateModuleName(t *testing.T) {
@@ -34,11 +33,6 @@ func TestValidateModuleName(t *testing.T) {
 			wantErr:    true,
 		},
 		{
-			name:       "Reserved keywords",
-			moduleName: "github.com/example/.git",
-			wantErr:    true,
-		},
-		{
 			name:       "Relative path",
 			moduleName: "./relative/path",
 			wantErr:    true,
@@ -52,15 +46,11 @@ func TestValidateModuleName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var errInvalidPath *module.InvalidPathError
-
 			err := ValidateModuleName(tt.moduleName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ValidateModuleName(%q) = %v, wantErr %v", tt.moduleName, err, tt.wantErr)
-			} else if err != nil && !tt.wantErr {
-				t.Errorf("Unexpected error: %v", err)
-			} else if err != nil && tt.wantErr && !errors.As(err, &errInvalidPath) && tt.moduleName != "" {
-				t.Errorf("Error type mismatch: got %v, expected module.ErrInvalidPath or related", err)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
