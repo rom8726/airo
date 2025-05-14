@@ -8,6 +8,7 @@ Spec-first Golang project scaffold generator
 - **Dependency injection via [rom8726/di]** – constructor-based DI.
 - **Batteries included**
   - PostgreSQL integration
+  - MySQL integration
   - Redis integration (optional)
   - Health-check, Prometheus metrics, pprof endpoints
   - Structured logging with slog
@@ -29,7 +30,7 @@ The wizard will ask:
 1. Project name (folder will be created in the current directory)
 2. Go module path (e.g. `github.com/acme/myservice`)
 3. Path to OpenAPI specification (YAML or JSON)
-4. Database choice (currently only **PostgreSQL**)
+4. Database choice (**PostgreSQL** \ **MySQL**)
 5. Additional infrastructure (currently **Redis**)
 
 After confirmation, the scaffold is generated.  
