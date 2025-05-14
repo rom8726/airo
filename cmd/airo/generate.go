@@ -13,6 +13,7 @@ import (
 	"github.com/rom8726/airo/generator"
 	"github.com/rom8726/airo/generator/infra"
 	"github.com/rom8726/airo/tui"
+	"github.com/rom8726/airo/validate"
 )
 
 var generateCmd = &cobra.Command{
@@ -44,14 +45,14 @@ func runGenerateCmd(ctx context.Context) error {
 }
 
 func validateProjectConfig(projectConfig *config.ProjectConfig) error {
-	if projectConfig.ProjectName == "" {
-		return fmt.Errorf("project name is required")
+	if err := validate.ValidateProjectName(projectConfig.ProjectName); err != nil {
+		return fmt.Errorf("project name is invalid: %w", err)
+	}
+	if err := validate.ValidateModuleName(projectConfig.ModuleName); err != nil {
+		return fmt.Errorf("module name is invalid: %w", err)
 	}
 	if projectConfig.OpenAPIPath == "" {
 		return fmt.Errorf("openapi path is required")
-	}
-	if projectConfig.ModuleName == "" {
-		return fmt.Errorf("module name is required")
 	}
 	if projectConfig.DB == "" {
 		return fmt.Errorf("db type is required")

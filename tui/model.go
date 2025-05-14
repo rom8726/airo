@@ -1,9 +1,12 @@
 package tui
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/generator/infra"
@@ -20,12 +23,18 @@ const (
 	stepDone
 )
 
+var errStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#ff5555")).
+	Render
+
 type Model struct {
 	step       step
 	input      textinput.Model
 	dbList     list.Model
 	infraList  list.Model
 	confirmMsg string
+	errMsg     string
+	errTS      time.Time
 
 	project     string
 	module      string

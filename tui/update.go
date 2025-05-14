@@ -1,11 +1,18 @@
 package tui
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/rom8726/airo/config"
+	"github.com/rom8726/airo/validate"
 )
+
+const errTimeout = 4 * time.Second
+
+type clearErrMsg struct{}
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -20,6 +27,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case clearErrMsg:
+		m.errMsg = ""
+
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
@@ -34,6 +45,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
+				if err := validate.ValidateProjectName(m.project); err != nil {
+					m.errMsg = err.Error()
+					m.errTS = time.Now()
+
+					return m, tea.Tick(errTimeout, func(time.Time) tea.Msg { return clearErrMsg{} })
+				}
+
 				m.input.SetValue("")
 				m.input.Placeholder = "module name (e.g. github.com/user/project)"
 				m.step = stepModuleName
@@ -42,6 +60,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.module = m.input.Value()
 				if m.module == "" {
 					return m, nil
+				}
+
+				if err := validate.ValidateModuleName(m.module); err != nil {
+					m.errMsg = err.Error()
+					m.errTS = time.Now()
+
+					return m, tea.Tick(errTimeout, func(time.Time) tea.Msg { return clearErrMsg{} })
 				}
 
 				m.input.SetValue("")
@@ -91,6 +116,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+	}
+
+	if _, ok := msg.(tea.KeyMsg); ok && m.errMsg != "" {
+		m.errMsg = ""
 	}
 
 	return m, cmd
