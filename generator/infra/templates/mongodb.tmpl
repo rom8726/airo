@@ -1,0 +1,65 @@
+{{ define "config" }}
+type Mongo struct {
+	User         string        `envconfig:"USER"`
+	Password     string        `envconfig:"PASSWORD"`
+	Host         string        `envconfig:"HOST" required:"true"`
+	Port         uint16        `envconfig:"PORT" default:"27017"`
+	Database     string        `envconfig:"DATABASE" required:"true"`
+	MaxPoolSize  uint64        `envconfig:"MAX_POOL_SIZE" default:"20"`
+	ConnTimeout  time.Duration `envconfig:"CONN_TIMEOUT" default:"10s"`
+}
+
+func (db *Mongo) URI() string {
+	if db.User != "" {
+		return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", db.User, db.Password, db.Host, db.Port, db.Database)
+	}
+	return fmt.Sprintf("mongodb://%s:%d/%s", db.Host, db.Port, db.Database)
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newMongoConn(ctx context.Context, cfg *config.Mongo) (*mongo.Client, error) {
+	opts := options.Client().
+		ApplyURI(cfg.URI()).
+		SetMaxPoolSize(cfg.MaxPoolSize).
+		SetConnectTimeout(cfg.ConnTimeout)
+
+	client, err := mongo.Connect(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := client.Ping(ctx, nil); err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	mongoClient, err := newMongoConn(ctx, &cfg.Mongo)
+	if err != nil {
+		return nil, fmt.Errorf("create mongo connection: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.MongoClient != nil {
+		_ = app.MongoClient.Disconnect(context.Background())
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-mongodb:
+    image: mongo:8.0.4
+    container_name: {{ .ProjectName }}-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: db
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - "mongodb_{{ .ProjectName }}:/data/db"
+{{ end }}

@@ -3,6 +3,7 @@ package config
 const (
 	DBTypePostgres = "postgresql"
 	DBTypeMySQL    = "mysql"
+	DBTypeMongoDB  = "mongodb"
 )
 
 type ProjectConfig struct {

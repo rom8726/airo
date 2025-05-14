@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/generator/infra"
@@ -23,9 +22,7 @@ const (
 	stepDone
 )
 
-var errStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#ff5555")).
-	Render
+const windowWidth = 80
 
 type Model struct {
 	step       step
@@ -49,7 +46,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	ti.Placeholder = "project-name"
 	ti.Focus()
 	ti.CharLimit = 64
-	ti.Width = 32
+	ti.Width = windowWidth
 
 	// ----- DB -----
 	dbInfos := infra.ListDBInfos()
@@ -67,7 +64,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	dbList.SetShowStatusBar(false)
 	dbList.SetFilteringEnabled(false)
 	dbList.SetShowHelp(true)
-	dbList.SetWidth(80)
+	dbList.SetWidth(windowWidth)
 	dbList.SetHeight(20)
 
 	// ----- Infra -----
@@ -85,7 +82,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	infraList.SetShowStatusBar(false)
 	infraList.SetFilteringEnabled(false)
 	infraList.SetShowHelp(true)
-	infraList.SetWidth(80)
+	infraList.SetWidth(windowWidth)
 	infraList.SetHeight(20)
 
 	return &Model{

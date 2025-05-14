@@ -53,7 +53,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.input.SetValue("")
-				m.input.Placeholder = "module name (e.g. github.com/user/project)"
+				m.input.Placeholder = "module name (e.g. github.com/user/myproject)"
 				m.step = stepModuleName
 
 			case stepModuleName:
@@ -70,7 +70,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.input.SetValue("")
-				m.input.Placeholder = "Path to OpenAPI spec"
+				m.input.Placeholder = "Path to OpenAPI spec (e.g. example/server.yml)"
 				m.step = stepOpenAPIPath
 
 			case stepDBChoice:
