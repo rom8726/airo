@@ -1,0 +1,65 @@
+{{ define "config" }}
+type MySQL struct {
+	User            string        `envconfig:"USER" required:"true"`
+	Password        string        `envconfig:"PASSWORD" required:"true"`
+	Host            string        `envconfig:"HOST" required:"true"`
+	Database        string        `envconfig:"DATABASE" required:"true"`
+	MaxIdleConns    int           `envconfig:"MAX_IDLE_CONNS" default:"10"`
+	MaxOpenConns    int           `envconfig:"MAX_OPEN_CONNS" default:"20"`
+	ConnMaxLifetime time.Duration `envconfig:"CONN_MAX_LIFETIME" default:"10m"`
+}
+
+func (db *MySQL) ConnString() string {
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true&loc=Local", db.User, db.Password, db.Host, db.Database)
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newMySQLConn(ctx context.Context, cfg *config.MySQL) (*sql.DB, error) {
+	db, err := sql.Open("mysql", cfg.ConnString())
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetConnMaxIdleTime(cfg.ConnMaxLifetime)
+	db.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	db.SetMaxIdleConns(cfg.MaxIdleConns)
+	db.SetMaxOpenConns(cfg.MaxOpenConns)
+
+	if err := db.PingContext(ctx); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	mysqlDB, err := newMySQLConn(ctx, &cfg.MySQL)
+	if err != nil {
+		return nil, fmt.Errorf("create mysql connection: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.MySQLDB != nil {
+		_ = app.MySQLDB.Close()
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-mysql:
+    image: bitnami/mysql:latest
+    container_name: {{ .ProjectName }}-mysql
+    restart: always
+    environment:
+      - MYSQL_USER=user
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=db
+      - DB_DATA_DIR=/opt/mysql/data
+    volumes:
+      - "mysql_{{ .ProjectName }}:/opt/mysql/data"
+    ports:
+      - "5432:5432"
+{{ end }}
