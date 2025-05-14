@@ -9,6 +9,7 @@ Spec-first Golang project scaffold generator
 - **Batteries included**
   - PostgreSQL integration
   - MySQL integration
+  - MongoDB integration
   - Redis integration (optional)
   - Health-check, Prometheus metrics, pprof endpoints
   - Structured logging with slog
@@ -30,8 +31,22 @@ The wizard will ask:
 1. Project name (folder will be created in the current directory)
 2. Go module path (e.g. `github.com/acme/myservice`)
 3. Path to OpenAPI specification (YAML or JSON)
-4. Database choice (**PostgreSQL** \ **MySQL**)
+4. Database choice (**PostgreSQL** \ **MySQL** \ **MongoDB**)
 5. Additional infrastructure (currently **Redis**)
+
+Screenshots:
+
+<img src="./docs/wizard1.png" style="max-width: 350px; width: 350px; " alt="Enter project name"/>
+
+<img src="./docs/wizard2.png" style="max-width: 350px; width: 350px; " alt="Enter module name"/>
+
+<img src="./docs/wizard3.png" style="max-width: 350px; width: 350px; " alt="Enter OpenAPI specification file path"/>
+
+<img src="./docs/wizard4.png" style="max-width: 350px; width: 350px; " alt="Choose database type"/>
+
+<img src="./docs/wizard5.png" style="max-width: 350px; width: 350px; " alt="Choose additional infrastructure"/>
+
+<img src="./docs/wizard6.png" style="max-width: 350px; width: 350px; " alt="Confirmation"/>
 
 After confirmation, the scaffold is generated.  
 Infrastructure-specific sections (PostgreSQL container, Redis container, volumes, healthchecks, etc.) are automatically injected into `docker-compose.yml`.
