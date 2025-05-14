@@ -1,6 +1,7 @@
 package infra
 
 import (
+	"math"
 	"sort"
 	"sync"
 )
@@ -11,6 +12,8 @@ type InfraInfo struct {
 	Code      string
 	Title     string
 	Processor Processor
+
+	order int
 }
 
 var registry = Registry{}
@@ -19,6 +22,10 @@ var registryMu sync.Mutex
 func addInfra(code string, info InfraInfo) {
 	registryMu.Lock()
 	defer registryMu.Unlock()
+
+	if info.order == 0 {
+		info.order = math.MaxInt
+	}
 
 	registry[code] = info
 }
@@ -40,7 +47,7 @@ func ListInfraInfos() []InfraInfo {
 	}
 
 	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Code < infos[j].Code
+		return infos[i].order < infos[j].order
 	})
 
 	return infos

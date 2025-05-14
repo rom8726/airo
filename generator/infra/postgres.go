@@ -16,6 +16,7 @@ func init() {
 		Code:      config.DBTypePostgres,
 		Title:     "PostgreSQL",
 		Processor: &PostgresProcessor{},
+		order:     1,
 	})
 }
 

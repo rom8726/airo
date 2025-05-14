@@ -14,6 +14,7 @@ func init() {
 		Code:      config.DBTypeMySQL,
 		Title:     "MySQL",
 		Processor: &MysqlProcessor{},
+		order:     2,
 	})
 }
 

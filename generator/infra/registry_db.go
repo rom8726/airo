@@ -1,6 +1,7 @@
 package infra
 
 import (
+	"math"
 	"sort"
 	"sync"
 )
@@ -11,6 +12,8 @@ type DBInfo struct {
 	Code      string
 	Title     string
 	Processor Processor
+
+	order int
 }
 
 var registryDB = RegistryDB{}
@@ -19,6 +22,10 @@ var registryDBMu sync.Mutex
 func addDB(code string, info DBInfo) {
 	registryDBMu.Lock()
 	defer registryDBMu.Unlock()
+
+	if info.order == 0 {
+		info.order = math.MaxInt
+	}
 
 	registryDB[code] = info
 }
@@ -40,7 +47,7 @@ func ListDBInfos() []DBInfo {
 	}
 
 	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Code < infos[j].Code
+		return infos[i].order < infos[j].order
 	})
 
 	return infos

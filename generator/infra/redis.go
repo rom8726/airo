@@ -16,6 +16,7 @@ func init() {
 		Code:      "redis",
 		Title:     "Redis",
 		Processor: &RedisProcessor{},
+		order:     1,
 	})
 }
 
