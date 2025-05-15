@@ -4,7 +4,7 @@ Spec-first Golang project scaffold generator
 
 ## Key features
 - **OpenAPI first** – start with a spec, everything else is generated around it.
-- **Code generation with [ogen-go/ogen]** – type-safe request/response models & router.
+- **Code generation with [ogen-go/ogen]** – generation of request/response models & router.
 - **Dependency injection via [rom8726/di]** – constructor-based DI.
 - **Batteries included**
   - PostgreSQL integration
