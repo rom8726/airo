@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	redisEnvFormat = "REDIS_HOST=%s\nREDIS_PORT=6379\nREDIS_PASSWORD=password\nREDIS_DB=0"
+	redisEnvFormat = "# Redis\nREDIS_HOST=%s\nREDIS_PORT=6379\nREDIS_PASSWORD=password\nREDIS_DB=0"
 )
 
 func init() {

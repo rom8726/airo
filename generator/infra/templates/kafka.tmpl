@@ -1,0 +1,100 @@
+{{ define "config" }}
+type Kafka struct {
+	Brokers  []string      `envconfig:"BROKERS"  required:"true" split_words:"true"`
+	ClientID string        `envconfig:"CLIENT_ID" required:"true"`
+	Version  string        `envconfig:"VERSION"   default:"3.6.0"`
+	Timeout  time.Duration `envconfig:"TIMEOUT"   default:"10s"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newKafka(_ context.Context, cfg *config.Kafka) (sarama.Client, sarama.SyncProducer, error) {
+	version, err := sarama.ParseKafkaVersion(cfg.Version)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse kafka version: %w", err)
+	}
+
+	sc := sarama.NewConfig()
+	sc.ClientID = cfg.ClientID
+	sc.Version = version
+	sc.Net.DialTimeout = cfg.Timeout
+	sc.Net.ReadTimeout = cfg.Timeout
+	sc.Net.WriteTimeout = cfg.Timeout
+	sc.Producer.RequiredAcks = sarama.WaitForAll
+	sc.Producer.Return.Successes = true
+
+	client, err := sarama.NewClient(cfg.Brokers, sc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new client: %w", err)
+	}
+
+	producer, err := sarama.NewSyncProducerFromClient(client)
+	if err != nil {
+		_ = client.Close()
+		return nil, nil, fmt.Errorf("new producer: %w", err)
+	}
+
+	return client, producer, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	kafkaClient, kafkaProducer, err := newKafka(ctx, &cfg.Kafka)
+	if err != nil {
+		return nil, fmt.Errorf("create kafka producer: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.KafkaProducer != nil {
+		_ = app.KafkaProducer.Close()
+	}
+	if app.KafkaClient != nil {
+		_ = app.KafkaClient.Close()
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: {{ .ProjectName }}-zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  {{ .ProjectName }}-kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: {{ .ProjectName }}-kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: {{ .ProjectName }}-zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    depends_on:
+      - {{ .ProjectName }}-zookeeper
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_{{ .ProjectName }}:/var/lib/kafka/data"
+
+  {{ .ProjectName }}-kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: {{ .ProjectName }}-kafka-ui
+    restart: always
+    depends_on:
+      - {{ .ProjectName }}-kafka
+    ports:
+      - "7080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: {{ .ProjectName }}-kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: {{ .ProjectName }}-zookeeper:2181
+      DYNAMIC_CONFIG_ENABLED: "true"
+{{ end }}

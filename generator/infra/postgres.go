@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	pgEnvFormat = "POSTGRES_HOST=%s\nPOSTGRES_DATABASE=db\nPOSTGRES_PASSWORD=password\nPOSTGRES_PORT=5432\nPOSTGRES_USER=user"
+	pgEnvFormat = "# PostgreSQL\nPOSTGRES_HOST=%s\nPOSTGRES_DATABASE=db\nPOSTGRES_PASSWORD=password\nPOSTGRES_PORT=5432\nPOSTGRES_USER=user"
 )
 
 func init() {

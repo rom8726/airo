@@ -7,7 +7,7 @@ import (
 	"github.com/rom8726/airo/config"
 )
 
-const mysqlEnvFormat = "MYSQL_HOST=%s\nMYSQL_PORT=3306\nMYSQL_DATABASE=db\nMYSQL_PASSWORD=password\nMYSQL_USER=user"
+const mysqlEnvFormat = "# MySQL\nMYSQL_HOST=%s\nMYSQL_PORT=3306\nMYSQL_DATABASE=db\nMYSQL_PASSWORD=password\nMYSQL_USER=user"
 
 func init() {
 	addDB(config.DBTypeMySQL, DBInfo{

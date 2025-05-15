@@ -7,7 +7,7 @@ import (
 	"github.com/rom8726/airo/config"
 )
 
-const mongoEnvFormat = "MONGO_HOST=%s\nMONGO_PORT=27017\nMONGO_DATABASE=db\nMONGO_PASSWORD=password\nMONGO_USER=user"
+const mongoEnvFormat = "# MongoDB\nMONGO_HOST=%s\nMONGO_PORT=27017\nMONGO_DATABASE=db\nMONGO_PASSWORD=password\nMONGO_USER=user"
 
 func init() {
 	addDB(config.DBTypeMongoDB, DBInfo{
