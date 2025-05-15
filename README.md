@@ -11,6 +11,7 @@ Spec-first Golang project scaffold generator
   - MySQL integration
   - MongoDB integration
   - Redis integration (optional)
+  - Kafka integration (optional)
   - Health-check, Prometheus metrics, pprof endpoints
   - Structured logging with slog
 - **Docker-ready** – `Dockerfile`, `docker-compose.yml`, `Makefile` are scaffolded for you.
@@ -32,7 +33,7 @@ The wizard will ask:
 2. Go module path (e.g. `github.com/acme/myservice`)
 3. Path to OpenAPI specification (YAML or JSON)
 4. Database choice (**PostgreSQL** \ **MySQL** \ **MongoDB**)
-5. Additional infrastructure (currently **Redis**)
+5. Additional infrastructure (**Redis** \ **Kafka**)
 
 Screenshots:
 
