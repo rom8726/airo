@@ -5,23 +5,34 @@ import (
 	"fmt"
 
 	"github.com/rom8726/airo/config"
+	"github.com/rom8726/airo/generator/infra"
 	"github.com/rom8726/airo/generator/steps"
 )
 
-func GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
+type Generator struct {
+	registry *infra.Registry
+}
+
+func New(registry *infra.Registry) *Generator {
+	return &Generator{
+		registry: registry,
+	}
+}
+
+func (g *Generator) GenerateProject(ctx context.Context, cfg *config.ProjectConfig) error {
 	steps := []Step{
 		steps.RootDirStep{},
 		steps.GoModStep{},
 		steps.SpecsStep{},
 		steps.OGenStep{},
 		steps.PkgStep{},
-		steps.ConfigStep{},
+		steps.NewConfigStep(g.registry),
 		steps.RestAPIStep{},
-		steps.AppStep{},
+		steps.NewAppStep(g.registry),
 		steps.ServerCmdStep{},
 		steps.MainGoStep{},
 		steps.DockerfileStep{},
-		steps.DevEnvStep{},
+		steps.NewDevEnvStep(g.registry),
 		steps.GolangCIStep{},
 		steps.GoModTidyStep{},
 	}

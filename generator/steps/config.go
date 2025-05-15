@@ -15,13 +15,21 @@ import (
 //go:embed templates/config.go.tmpl
 var tmplConfigGo string
 
-type ConfigStep struct{}
+type ConfigStep struct {
+	reg *infra.Registry
+}
+
+func NewConfigStep(reg *infra.Registry) *ConfigStep {
+	return &ConfigStep{
+		reg: reg,
+	}
+}
 
 func (ConfigStep) Description() string {
 	return "Generate config package"
 }
 
-func (ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
+func (s ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	dir := configDir(cfg)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
@@ -41,7 +49,7 @@ func (ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 
 	infraInfos := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
 	for _, code := range cfg.UseInfra {
-		infraInfos = append(infraInfos, infra.GetInfra(code))
+		infraInfos = append(infraInfos, s.reg.GetInfra(code))
 	}
 
 	type renderData struct {
@@ -49,7 +57,7 @@ func (ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 		Infras []infra.InfraInfo
 	}
 	data := renderData{
-		DB:     infra.GetDB(cfg.DB),
+		DB:     s.reg.GetDB(cfg.DB),
 		Infras: infraInfos,
 	}
 

@@ -19,13 +19,21 @@ const (
 //go:embed templates/app.go.tmpl
 var tmplAppGo string
 
-type AppStep struct{}
+type AppStep struct {
+	reg *infra.Registry
+}
+
+func NewAppStep(reg *infra.Registry) *AppStep {
+	return &AppStep{
+		reg: reg,
+	}
+}
 
 func (AppStep) Description() string {
 	return "Create app.go"
 }
 
-func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
+func (s AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	dir := internalDir(cfg)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
@@ -45,7 +53,7 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 
 	infraInfos := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
 	for _, code := range cfg.UseInfra {
-		infraInfos = append(infraInfos, infra.GetInfra(code))
+		infraInfos = append(infraInfos, s.reg.GetInfra(code))
 	}
 
 	type renderData struct {
@@ -56,7 +64,7 @@ func (AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 	data := renderData{
 		Module:             cfg.ModuleName,
-		DB:                 infra.GetDB(cfg.DB),
+		DB:                 s.reg.GetDB(cfg.DB),
 		Infras:             infraInfos,
 		HasSecurityHandler: hasSecurityHandler(cfg),
 	}

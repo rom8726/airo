@@ -41,7 +41,7 @@ type Model struct {
 	projectConfig *config.ProjectConfig
 }
 
-func InitialModel(projectCfg *config.ProjectConfig) *Model {
+func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *Model {
 	ti := textinput.New()
 	ti.Placeholder = "project-name"
 	ti.Focus()
@@ -49,7 +49,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	ti.Width = windowWidth
 
 	// ----- DB -----
-	dbInfos := infra.ListDBInfos()
+	dbInfos := registry.ListDBs()
 	dbItems := make([]list.Item, 0, len(dbInfos))
 	for _, elem := range dbInfos {
 		dbItems = append(dbItems, dbItem{
@@ -68,7 +68,7 @@ func InitialModel(projectCfg *config.ProjectConfig) *Model {
 	dbList.SetHeight(20)
 
 	// ----- Infra -----
-	infraInfos := infra.ListInfraInfos()
+	infraInfos := registry.ListInfras()
 	items := make([]list.Item, 0, len(infraInfos))
 	for _, elem := range infraInfos {
 		items = append(items, infraItem{
