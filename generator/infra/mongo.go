@@ -7,26 +7,30 @@ import (
 	"github.com/rom8726/airo/config"
 )
 
-const mongoEnvFormat = "# MongoDB\nMONGO_HOST=%s\nMONGO_PORT=27017\nMONGO_DATABASE=db\nMONGO_PASSWORD=password\nMONGO_USER=user"
+const mongoEnvFormat = `
+# MongoDB
+MONGO_HOST=%s
+MONGO_PORT=27017
+MONGO_DATABASE=db
+MONGO_PASSWORD=password
+MONGO_USER=user`
 
-func init() {
-	addDB(config.DBTypeMongoDB, DBInfo{
-		Code:      config.DBTypeMongoDB,
-		Title:     "MongoDB",
-		Processor: &MongoProcessor{},
-		order:     3,
-	})
+func WithMongo() Opt {
+	return func(registry *Registry) {
+		registry.addDB(config.DBTypeMongoDB, &DBInfo{
+			Code:      config.DBTypeMongoDB,
+			Title:     "MongoDB",
+			Processor: &MongoProcessor{},
+			order:     3,
+		})
+	}
 }
 
 //go:embed templates/mongodb.tmpl
 var tmplMongo string
 
 type MongoProcessor struct {
-	cfg *config.ProjectConfig
-}
-
-func (m *MongoProcessor) SetConfig(cfg *config.ProjectConfig) {
-	m.cfg = cfg
+	BaseProcessor
 }
 
 func (m *MongoProcessor) Import() string {
@@ -35,13 +39,7 @@ func (m *MongoProcessor) Import() string {
 }
 
 func (m *MongoProcessor) Config() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMongo, "config", renderData)
+	return m.config(tmplMongo)
 }
 
 func (m *MongoProcessor) ConfigField() string {
@@ -49,23 +47,11 @@ func (m *MongoProcessor) ConfigField() string {
 }
 
 func (m *MongoProcessor) Constructor() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMongo, "constructor", renderData)
+	return m.constructor(tmplMongo)
 }
 
 func (m *MongoProcessor) InitInAppConstructor() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMongo, "init_in_app_constructor", renderData)
+	return m.initInAppConstructor(tmplMongo)
 }
 
 func (m *MongoProcessor) StructField() string {
@@ -77,23 +63,11 @@ func (m *MongoProcessor) FillStructField() string {
 }
 
 func (m *MongoProcessor) Close() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMongo, "close", renderData)
+	return m.close(tmplMongo)
 }
 
 func (m *MongoProcessor) DockerCompose() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMongo, "docker_compose", renderData)
+	return m.dockerCompose(tmplMongo)
 }
 
 func (m *MongoProcessor) ComposeEnv() string {

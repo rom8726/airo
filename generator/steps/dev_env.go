@@ -27,25 +27,33 @@ var tmplConfigEnv string
 //go:embed files/dev/dev.mk
 var devMkFile []byte
 
-type DevEnvStep struct{}
+type DevEnvStep struct {
+	reg *infra.Registry
+}
+
+func NewDevEnvStep(reg *infra.Registry) *DevEnvStep {
+	return &DevEnvStep{
+		reg: reg,
+	}
+}
 
 func (DevEnvStep) Description() string {
 	return "Create Makefile"
 }
 
-func (DevEnvStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
-	if err := doMakefile(cfg); err != nil {
+func (s DevEnvStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
+	if err := s.doMakefile(cfg); err != nil {
 		return err
 	}
 
-	if err := doEnvDir(cfg); err != nil {
+	if err := s.doEnvDir(cfg); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func doMakefile(cfg *config.ProjectConfig) error {
+func (s DevEnvStep) doMakefile(cfg *config.ProjectConfig) error {
 	tmpl, err := template.New("makefile").Parse(tmplMakefile)
 	if err != nil {
 		return fmt.Errorf("parse template \"makefile\" failed: %w", err)
@@ -75,7 +83,7 @@ func doMakefile(cfg *config.ProjectConfig) error {
 	return nil
 }
 
-func doEnvDir(cfg *config.ProjectConfig) error {
+func (s DevEnvStep) doEnvDir(cfg *config.ProjectConfig) error {
 	dir := devDir(cfg)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
@@ -86,22 +94,22 @@ func doEnvDir(cfg *config.ProjectConfig) error {
 		return fmt.Errorf("failed to write dev.mk: %w", err)
 	}
 
-	if err := doDockerComposeYml(cfg); err != nil {
+	if err := s.doDockerComposeYml(cfg); err != nil {
 		return err
 	}
 
-	if err := doConfigEnvExample(cfg); err != nil {
+	if err := s.doConfigEnvExample(cfg); err != nil {
 		return err
 	}
 
-	if err := doComposeEnvExample(cfg); err != nil {
+	if err := s.doComposeEnvExample(cfg); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func doDockerComposeYml(cfg *config.ProjectConfig) error {
+func (s DevEnvStep) doDockerComposeYml(cfg *config.ProjectConfig) error {
 	tmpl, err := template.New("docker_compose").Parse(tmplDockerComposeYml)
 	if err != nil {
 		return fmt.Errorf("parse template \"docker_compose\" failed: %w", err)
@@ -122,13 +130,13 @@ func doDockerComposeYml(cfg *config.ProjectConfig) error {
 
 	infras := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
 	for _, code := range cfg.UseInfra {
-		item := infra.GetInfra(code)
+		item := s.reg.GetInfra(code)
 		infras = append(infras, item)
 	}
 
 	data := renderData{
 		ProjectName: cfg.ProjectName,
-		DB:          infra.GetDB(cfg.DB),
+		DB:          s.reg.GetDB(cfg.DB),
 		Infras:      infras,
 	}
 
@@ -139,7 +147,7 @@ func doDockerComposeYml(cfg *config.ProjectConfig) error {
 	return nil
 }
 
-func doConfigEnvExample(cfg *config.ProjectConfig) error {
+func (s DevEnvStep) doConfigEnvExample(cfg *config.ProjectConfig) error {
 	tmpl, err := template.New("config_env").Parse(tmplConfigEnv)
 	if err != nil {
 		return fmt.Errorf("parse template \"config_env\" failed: %w", err)
@@ -159,12 +167,12 @@ func doConfigEnvExample(cfg *config.ProjectConfig) error {
 
 	infras := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
 	for _, code := range cfg.UseInfra {
-		item := infra.GetInfra(code)
+		item := s.reg.GetInfra(code)
 		infras = append(infras, item)
 	}
 
 	data := renderData{
-		DB:     infra.GetDB(cfg.DB),
+		DB:     s.reg.GetDB(cfg.DB),
 		Infras: infras,
 	}
 
@@ -175,7 +183,7 @@ func doConfigEnvExample(cfg *config.ProjectConfig) error {
 	return nil
 }
 
-func doComposeEnvExample(cfg *config.ProjectConfig) error {
+func (s DevEnvStep) doComposeEnvExample(cfg *config.ProjectConfig) error {
 	tmpl, err := template.New("compose_env").Parse(tmplComposeEnv)
 	if err != nil {
 		return fmt.Errorf("parse template \"compose_env\" failed: %w", err)
@@ -195,12 +203,12 @@ func doComposeEnvExample(cfg *config.ProjectConfig) error {
 
 	infras := make([]infra.InfraInfo, 0, len(cfg.UseInfra))
 	for _, code := range cfg.UseInfra {
-		item := infra.GetInfra(code)
+		item := s.reg.GetInfra(code)
 		infras = append(infras, item)
 	}
 
 	data := renderData{
-		DB:     infra.GetDB(cfg.DB),
+		DB:     s.reg.GetDB(cfg.DB),
 		Infras: infras,
 	}
 

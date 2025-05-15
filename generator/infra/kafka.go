@@ -3,30 +3,29 @@ package infra
 import (
 	_ "embed"
 	"fmt"
-
-	"github.com/rom8726/airo/config"
 )
 
-const kafkaEnvFormat = "# Kafka\nKAFKA_BROKERS=%s:9092\nKAFKA_CLIENT_ID=app"
+const kafkaEnvFormat = `
+# Kafka
+KAFKA_BROKERS=%s:9092
+KAFKA_CLIENT_ID=app`
 
-func init() {
-	addInfra("kafka", InfraInfo{
-		Code:      "kafka",
-		Title:     "Kafka",
-		Processor: &KafkaProcessor{},
-		order:     2,
-	})
+func WithKafka() Opt {
+	return func(registry *Registry) {
+		registry.addInfra("kafka", &InfraInfo{
+			Code:      "kafka",
+			Title:     "Kafka",
+			Processor: &KafkaProcessor{},
+			order:     2,
+		})
+	}
 }
 
 //go:embed templates/kafka.tmpl
 var tmplKafka string
 
 type KafkaProcessor struct {
-	cfg *config.ProjectConfig
-}
-
-func (k *KafkaProcessor) SetConfig(cfg *config.ProjectConfig) {
-	k.cfg = cfg
+	BaseProcessor
 }
 
 func (k *KafkaProcessor) Import() string {
@@ -34,13 +33,7 @@ func (k *KafkaProcessor) Import() string {
 }
 
 func (k *KafkaProcessor) Config() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: k.cfg.ProjectName,
-	}
-
-	return render(tmplKafka, "config", renderData)
+	return k.config(tmplKafka)
 }
 
 func (k *KafkaProcessor) ConfigField() string {
@@ -48,23 +41,11 @@ func (k *KafkaProcessor) ConfigField() string {
 }
 
 func (k *KafkaProcessor) Constructor() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: k.cfg.ProjectName,
-	}
-
-	return render(tmplKafka, "constructor", renderData)
+	return k.constructor(tmplKafka)
 }
 
 func (k *KafkaProcessor) InitInAppConstructor() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: k.cfg.ProjectName,
-	}
-
-	return render(tmplKafka, "init_in_app_constructor", renderData)
+	return k.initInAppConstructor(tmplKafka)
 }
 
 func (k *KafkaProcessor) StructField() string {
@@ -78,23 +59,11 @@ func (k *KafkaProcessor) FillStructField() string {
 }
 
 func (k *KafkaProcessor) Close() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: k.cfg.ProjectName,
-	}
-
-	return render(tmplKafka, "close", renderData)
+	return k.close(tmplKafka)
 }
 
 func (k *KafkaProcessor) DockerCompose() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: k.cfg.ProjectName,
-	}
-
-	return render(tmplKafka, "docker_compose", renderData)
+	return k.dockerCompose(tmplKafka)
 }
 
 func (k *KafkaProcessor) ComposeEnv() string {

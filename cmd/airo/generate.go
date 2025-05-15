@@ -25,8 +25,18 @@ var generateCmd = &cobra.Command{
 }
 
 func runGenerateCmd(ctx context.Context) error {
+	registry := infra.NewRegistry(
+		// DBs
+		infra.WithPostgres(),
+		infra.WithMySQL(),
+		infra.WithMongo(),
+		// Infra
+		infra.WithRedis(),
+		infra.WithKafka(),
+	)
+
 	var projectConfig config.ProjectConfig
-	p := tea.NewProgram(tui.InitialModel(&projectConfig))
+	p := tea.NewProgram(tui.InitialModel(&projectConfig, registry))
 	if _, err := p.Run(); err != nil {
 		return err
 	}
@@ -39,9 +49,11 @@ func runGenerateCmd(ctx context.Context) error {
 		return err
 	}
 
-	infraSetConfig(&projectConfig)
+	registry.UpdateConfig(&projectConfig)
 
-	return generator.GenerateProject(ctx, &projectConfig)
+	gen := generator.New(registry)
+
+	return gen.GenerateProject(ctx, &projectConfig)
 }
 
 func validateProjectConfig(projectConfig *config.ProjectConfig) error {
@@ -68,12 +80,4 @@ func validateProjectConfig(projectConfig *config.ProjectConfig) error {
 	}
 
 	return nil
-}
-
-func infraSetConfig(cfg *config.ProjectConfig) {
-	infra.GetDB(cfg.DB).Processor.SetConfig(cfg)
-
-	for _, item := range infra.ListInfraInfos() {
-		item.Processor.SetConfig(cfg)
-	}
 }

@@ -7,26 +7,30 @@ import (
 	"github.com/rom8726/airo/config"
 )
 
-const mysqlEnvFormat = "# MySQL\nMYSQL_HOST=%s\nMYSQL_PORT=3306\nMYSQL_DATABASE=db\nMYSQL_PASSWORD=password\nMYSQL_USER=user"
+const mysqlEnvFormat = `
+# MySQL
+MYSQL_HOST=%s
+MYSQL_PORT=3306
+MYSQL_DATABASE=db
+MYSQL_PASSWORD=password
+MYSQL_USER=user`
 
-func init() {
-	addDB(config.DBTypeMySQL, DBInfo{
-		Code:      config.DBTypeMySQL,
-		Title:     "MySQL",
-		Processor: &MysqlProcessor{},
-		order:     2,
-	})
+func WithMySQL() Opt {
+	return func(registry *Registry) {
+		registry.addDB(config.DBTypeMySQL, &DBInfo{
+			Code:      config.DBTypeMySQL,
+			Title:     "MySQL",
+			Processor: &MysqlProcessor{},
+			order:     2,
+		})
+	}
 }
 
 //go:embed templates/mysql.tmpl
 var tmplMysql string
 
 type MysqlProcessor struct {
-	cfg *config.ProjectConfig
-}
-
-func (m *MysqlProcessor) SetConfig(cfg *config.ProjectConfig) {
-	m.cfg = cfg
+	BaseProcessor
 }
 
 func (m *MysqlProcessor) Import() string {
@@ -35,13 +39,7 @@ func (m *MysqlProcessor) Import() string {
 }
 
 func (m *MysqlProcessor) Config() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMysql, "config", renderData)
+	return m.config(tmplMysql)
 }
 
 func (m *MysqlProcessor) ConfigField() string {
@@ -49,23 +47,11 @@ func (m *MysqlProcessor) ConfigField() string {
 }
 
 func (m *MysqlProcessor) Constructor() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMysql, "constructor", renderData)
+	return m.constructor(tmplMysql)
 }
 
 func (m *MysqlProcessor) InitInAppConstructor() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMysql, "init_in_app_constructor", renderData)
+	return m.initInAppConstructor(tmplMysql)
 }
 
 func (m *MysqlProcessor) StructField() string {
@@ -77,23 +63,11 @@ func (m *MysqlProcessor) FillStructField() string {
 }
 
 func (m *MysqlProcessor) Close() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMysql, "close", renderData)
+	return m.close(tmplMysql)
 }
 
 func (m *MysqlProcessor) DockerCompose() string {
-	renderData := struct {
-		ProjectName string
-	}{
-		ProjectName: m.cfg.ProjectName,
-	}
-
-	return render(tmplMysql, "docker_compose", renderData)
+	return m.dockerCompose(tmplMysql)
 }
 
 func (m *MysqlProcessor) ComposeEnv() string {
