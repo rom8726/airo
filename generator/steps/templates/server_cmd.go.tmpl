@@ -46,6 +46,10 @@ func runServerCommand(ctx context.Context, _ []string) error {
 	logger := slog.New(loggerHandler)
 	slog.SetDefault(logger)
 
+	if err := upMigrations(cfg.{{ .DBConfigFieldName }}.ConnString(), cfg.MigrationsDir); err != nil {
+		return fmt.Errorf("up migrations: %w", err)
+	}
+
 	app, err := internal.NewApp(ctx, cfg, logger)
 	if err != nil {
 		return fmt.Errorf("create app: %w", err)

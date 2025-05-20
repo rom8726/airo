@@ -9,7 +9,7 @@ type Mongo struct {
 	ConnTimeout  time.Duration `envconfig:"CONN_TIMEOUT" default:"10s"`
 }
 
-func (db *Mongo) URI() string {
+func (db *Mongo) ConnString() string {
 	if db.User != "" {
 		return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", db.User, db.Password, db.Host, db.Port, db.Database)
 	}
@@ -20,7 +20,7 @@ func (db *Mongo) URI() string {
 {{ define "constructor" }}
 func newMongoConn(ctx context.Context, cfg *config.Mongo) (*mongo.Client, error) {
 	opts := options.Client().
-		ApplyURI(cfg.URI()).
+		ApplyURI(cfg.ConnString()).
 		SetMaxPoolSize(cfg.MaxPoolSize).
 		SetConnectTimeout(cfg.ConnTimeout)
 

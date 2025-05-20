@@ -1,0 +1,68 @@
+package server
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net/url"
+	"path"
+	"time"
+
+	"github.com/go-faster/errors"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/mongodb"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+func upMigrations(connStr, migrationsDir string) error {
+	slog.Info("up migrations...")
+
+	uri, err := url.Parse(connStr)
+	if err != nil {
+		return fmt.Errorf("parse mongodb uri: %w", err)
+	}
+
+	dbName := path.Base(uri.Path)
+	if dbName == "." || dbName == "/" {
+		return fmt.Errorf("database name not found in connection string")
+	}
+
+	config := &mongodb.Config{
+		DatabaseName:         dbName,
+		MigrationsCollection: "_migrations",
+	}
+
+	opts := options.Client().
+		ApplyURI(connStr).
+		SetMaxPoolSize(2).
+		SetConnectTimeout(5 * time.Second)
+
+	instance, err := mongo.Connect(context.Background(), opts)
+	if err != nil {
+		return fmt.Errorf("connect to mongodb: %w", err)
+	}
+
+	driver, err := mongodb.WithInstance(instance, config)
+	if err != nil {
+		return fmt.Errorf("create mongodb driver: %w", err)
+	}
+
+	mongoMigrate, err := migrate.NewWithDatabaseInstance("file://"+migrationsDir, "mongodb", driver)
+	if err != nil {
+		return fmt.Errorf("create migrate instance: %w", err)
+	}
+
+	if err := mongoMigrate.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			slog.Info("up migrations: no changes")
+			return nil
+		}
+		return fmt.Errorf("up: %w", err)
+	}
+
+	slog.Info("up migrations: done")
+
+	return nil
+}

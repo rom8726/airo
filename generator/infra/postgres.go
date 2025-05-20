@@ -31,6 +31,9 @@ func WithPostgres() Opt {
 //go:embed templates/postgres.tmpl
 var tmplPostgres string
 
+//go:embed files/cmd/server/migrate_postgresql_go
+var tmplMigratePostgres []byte
+
 type PostgresProcessor struct {
 	BaseProcessor
 }
@@ -45,6 +48,10 @@ func (p *PostgresProcessor) Config() string {
 
 func (p *PostgresProcessor) ConfigField() string {
 	return "Postgres Postgres `envconfig:\"POSTGRES\"`"
+}
+
+func (p *PostgresProcessor) ConfigFieldName() string {
+	return "Postgres"
 }
 
 func (p *PostgresProcessor) Constructor() string {
@@ -81,4 +88,8 @@ func (p *PostgresProcessor) ConfigEnv() string {
 	host := "localhost"
 
 	return fmt.Sprintf(pgEnvFormat, host)
+}
+
+func (p *PostgresProcessor) MigrateFileData() []byte {
+	return tmplMigratePostgres
 }

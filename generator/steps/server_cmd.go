@@ -9,18 +9,27 @@ import (
 	"text/template"
 
 	"github.com/rom8726/airo/config"
+	"github.com/rom8726/airo/generator/infra"
 )
 
 //go:embed templates/server_cmd.go.tmpl
 var tmplServerCmd string
 
-type ServerCmdStep struct{}
+type ServerCmdStep struct {
+	registry *infra.Registry
+}
+
+func NewServerCmdStep(registry *infra.Registry) *ServerCmdStep {
+	return &ServerCmdStep{
+		registry: registry,
+	}
+}
 
 func (ServerCmdStep) Description() string {
 	return "Create server command"
 }
 
-func (ServerCmdStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
+func (s ServerCmdStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	dir := serverCmdDir(cfg)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
@@ -40,10 +49,12 @@ func (ServerCmdStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 
 	type RenderData struct {
 		Module             string
+		DBConfigFieldName  string
 		HasSecurityHandler bool
 	}
 	data := RenderData{
 		Module:             cfg.ModuleName,
+		DBConfigFieldName:  s.registry.GetDB(cfg.DB).Processor.ConfigFieldName(),
 		HasSecurityHandler: hasSecurityHandler(cfg),
 	}
 

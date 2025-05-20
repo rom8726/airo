@@ -40,6 +40,10 @@ func (k *KafkaProcessor) ConfigField() string {
 	return "Kafka Kafka `envconfig:\"KAFKA\"`"
 }
 
+func (k *KafkaProcessor) ConfigFieldName() string {
+	return "Kafka"
+}
+
 func (k *KafkaProcessor) Constructor() string {
 	return k.constructor(tmplKafka)
 }
@@ -76,4 +80,8 @@ func (k *KafkaProcessor) ConfigEnv() string {
 	host := "localhost"
 
 	return fmt.Sprintf(kafkaEnvFormat, host)
+}
+
+func (k *KafkaProcessor) MigrateFileData() []byte {
+	return nil
 }

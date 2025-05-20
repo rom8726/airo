@@ -29,6 +29,9 @@ func WithMongo() Opt {
 //go:embed templates/mongodb.tmpl
 var tmplMongo string
 
+//go:embed files/cmd/server/migrate_mongodb_go
+var tmplMigrateMongo []byte
+
 type MongoProcessor struct {
 	BaseProcessor
 }
@@ -44,6 +47,10 @@ func (m *MongoProcessor) Config() string {
 
 func (m *MongoProcessor) ConfigField() string {
 	return "Mongo Mongo `envconfig:\"MONGO\"`\n"
+}
+
+func (m *MongoProcessor) ConfigFieldName() string {
+	return "Mongo"
 }
 
 func (m *MongoProcessor) Constructor() string {
@@ -80,4 +87,8 @@ func (m *MongoProcessor) ConfigEnv() string {
 	host := "localhost"
 
 	return fmt.Sprintf(mongoEnvFormat, host)
+}
+
+func (m *MongoProcessor) MigrateFileData() []byte {
+	return tmplMigrateMongo
 }

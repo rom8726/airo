@@ -59,6 +59,14 @@ func devDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "dev")
 }
 
+func migrationsDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(projectDir(cfg), "migrations")
+}
+
+func migrateGoPath(cfg *config.ProjectConfig) string {
+	return filepath.Join(serverCmdDir(cfg), "migrate.go")
+}
+
 func hasSecurityHandler(cfg *config.ProjectConfig) bool {
 	_, err := os.Stat(securityHandlerPath(cfg))
 
