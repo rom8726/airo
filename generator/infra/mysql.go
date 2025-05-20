@@ -29,6 +29,9 @@ func WithMySQL() Opt {
 //go:embed templates/mysql.tmpl
 var tmplMysql string
 
+//go:embed files/cmd/server/migrate_mysql_go
+var tmplMigrateMySQL []byte
+
 type MysqlProcessor struct {
 	BaseProcessor
 }
@@ -44,6 +47,10 @@ func (m *MysqlProcessor) Config() string {
 
 func (m *MysqlProcessor) ConfigField() string {
 	return "MySQL MySQL `envconfig:\"MYSQL\"`"
+}
+
+func (m *MysqlProcessor) ConfigFieldName() string {
+	return "MySQL"
 }
 
 func (m *MysqlProcessor) Constructor() string {
@@ -80,4 +87,8 @@ func (m *MysqlProcessor) ConfigEnv() string {
 	host := "localhost"
 
 	return fmt.Sprintf(mysqlEnvFormat, host)
+}
+
+func (m *MysqlProcessor) MigrateFileData() []byte {
+	return tmplMigrateMySQL
 }

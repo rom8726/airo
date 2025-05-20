@@ -19,5 +19,7 @@ RUN make build
 FROM scratch AS prod
 
 COPY --from=build /src/bin/app /bin/app
+COPY --from=build /src/migrations /migrations
+
 CMD ["/bin/app"]
 {{ end }}

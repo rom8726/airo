@@ -46,6 +46,10 @@ func (m *MongoProcessor) ConfigField() string {
 	return "Mongo Mongo `envconfig:\"MONGO\"`\n"
 }
 
+func (m *MongoProcessor) ConfigFieldName() string {
+	return "Mongo"
+}
+
 func (m *MongoProcessor) Constructor() string {
 	return m.constructor(tmplMongo)
 }
@@ -80,4 +84,8 @@ func (m *MongoProcessor) ConfigEnv() string {
 	host := "localhost"
 
 	return fmt.Sprintf(mongoEnvFormat, host)
+}
+
+func (m *MongoProcessor) MigrateFileData() []byte {
+	return nil
 }

@@ -10,6 +10,7 @@ type Processor interface {
 	Import() string
 	Config() string
 	ConfigField() string
+	ConfigFieldName() string
 	Constructor() string
 	InitInAppConstructor() string
 	StructField() string
@@ -18,4 +19,5 @@ type Processor interface {
 	DockerCompose() string
 	ComposeEnv() string
 	ConfigEnv() string
+	MigrateFileData() []byte
 }

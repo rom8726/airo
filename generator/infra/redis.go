@@ -40,6 +40,10 @@ func (r *RedisProcessor) ConfigField() string {
 	return "Redis Redis `envconfig:\"REDIS\"`"
 }
 
+func (r *RedisProcessor) ConfigFieldName() string {
+	return "Redis"
+}
+
 func (r *RedisProcessor) Config() string {
 	return r.config(tmplRedis)
 }
@@ -78,4 +82,8 @@ func (r *RedisProcessor) ConfigEnv() string {
 	host := "localhost"
 
 	return fmt.Sprintf(redisEnvFormat, host)
+}
+
+func (r *RedisProcessor) MigrateFileData() []byte {
+	return nil
 }
