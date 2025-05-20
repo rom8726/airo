@@ -29,6 +29,9 @@ func WithMongo() Opt {
 //go:embed templates/mongodb.tmpl
 var tmplMongo string
 
+//go:embed files/cmd/server/migrate_mongodb_go
+var tmplMigrateMongo []byte
+
 type MongoProcessor struct {
 	BaseProcessor
 }
@@ -87,5 +90,5 @@ func (m *MongoProcessor) ConfigEnv() string {
 }
 
 func (m *MongoProcessor) MigrateFileData() []byte {
-	return nil
+	return tmplMigrateMongo
 }
