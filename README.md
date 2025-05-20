@@ -12,6 +12,7 @@ Spec-first Golang project scaffold generator
   - MongoDB integration
   - Redis integration (optional)
   - Kafka integration (optional)
+  - Database migrations support
   - Health-check, Prometheus metrics, pprof endpoints
   - Structured logging with slog
 - **Docker-ready** – `Dockerfile`, `docker-compose.yml`, `Makefile` are scaffolded for you.
