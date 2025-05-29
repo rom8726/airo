@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"{{ .Module }}/internal"
-	"{{ .Module }}/internal/api/rest"
 	"{{ .Module }}/internal/config"
 )
 
@@ -55,10 +54,6 @@ func runServerCommand(ctx context.Context, _ []string) error {
 		return fmt.Errorf("create app: %w", err)
 	}
 	defer app.Close()
-
-	// TODO: register service components
-	app.RegisterComponent(rest.New)
-	{{ if .HasSecurityHandler }}app.RegisterComponent(rest.NewSecurityHandler){{ end }}
 
 	if err := app.Run(ctx); err != nil {
 		return fmt.Errorf("run app: %w", err)

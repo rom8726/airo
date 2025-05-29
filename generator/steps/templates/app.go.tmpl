@@ -12,6 +12,7 @@ import (
 
 	"{{ .Module }}/internal/config"
 	generatedserver "{{ .Module }}/internal/generated/server"
+	"{{ .Module }}/internal/api/rest"
 	"{{ .Module }}/pkg/httpserver"
 
 	"github.com/julienschmidt/httprouter"
@@ -37,6 +38,8 @@ type App struct {
     {{ .Processor.StructField }}
     {{- end }}
 
+	APIServer *httpserver.Server
+
 	container *di.Container
 	diApp     *di.App
 }
@@ -54,16 +57,24 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
 	container := di.New()
 	diApp := di.NewApp(container)
 
-	return &App{
+	app := &App{
 		Config:       cfg,
 		Logger:       logger,
 		container:    container,
 		diApp:        diApp,
 		{{ .DB.Processor.FillStructField }}
-        {{- range .Infras }}
-        {{ .Processor.FillStructField }}
-        {{- end }}
-	}, nil
+		{{- range .Infras }}
+		{{ .Processor.FillStructField }}
+		{{- end }}
+    }
+
+	app.registerComponents()
+	app.APIServer, err = app.newAPIServer()
+	if err != nil {
+		return nil, fmt.Errorf("create API server: %w", err)
+	}
+
+	return app, nil
 }
 
 func (app *App) RegisterComponent(constructor any) *di.Provider {
@@ -79,11 +90,6 @@ func (app *App) ResolveComponentsToStruct(target any) error {
 }
 
 func (app *App) Run(ctx context.Context) error {
-	apiServer, err := app.newAPIServer()
-	if err != nil {
-		return fmt.Errorf("create API server: %w", err)
-	}
-
 	techServer, err := app.newTechServer()
 	if err != nil {
 		return fmt.Errorf("create tech server: %w", err)
@@ -92,7 +98,7 @@ func (app *App) Run(ctx context.Context) error {
 	app.Logger.Info("Start API server")
 
 	group, groupCtx := errgroup.WithContext(ctx)
-	group.Go(func() error { return apiServer.ListenAndServe(groupCtx) })
+	group.Go(func() error { return app.APIServer.ListenAndServe(groupCtx) })
 	group.Go(func() error { return techServer.ListenAndServe(groupCtx) })
 	group.Go(func() error { return app.diApp.Run(groupCtx) })
 
@@ -104,6 +110,16 @@ func (app *App) Close() {
     {{- range .Infras }}
     {{ .Processor.Close }}
     {{- end }}
+}
+
+func (app *App) registerComponent(constructor any) *di.Provider {
+	return app.container.Provide(constructor)
+}
+
+func (app *App) registerComponents() {
+	app.registerComponent(rest.New)
+	{{ if .HasSecurityHandler }}app.registerComponent(rest.NewSecurityHandler){{ end }}
+	// TODO: register service components
 }
 
 func (app *App) newAPIServer() (*httpserver.Server, error) {
