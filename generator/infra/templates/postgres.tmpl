@@ -3,6 +3,7 @@ type Postgres struct {
 	User            string        `envconfig:"USER" required:"true"`
 	Password        string        `envconfig:"PASSWORD" required:"true"`
 	Host            string        `envconfig:"HOST" required:"true"`
+	Port            string        `envconfig:"PORT" default:"5432"`
 	Database        string        `envconfig:"DATABASE" required:"true"`
 	MaxIdleConnTime time.Duration `envconfig:"MAX_IDLE_CONN_TIME" default:"5m"`
 	MaxConns        int           `envconfig:"MAX_CONNS" default:"20"`
@@ -29,7 +30,7 @@ func (db *Postgres) ConnString() string {
 	uri := url.URL{
 		Scheme:   "postgres",
 		User:     user,
-		Host:     db.Host,
+		Host:     net.JoinHostPort(db.Host, db.Port),
 		Path:     db.Database,
 		RawQuery: params.Encode(),
 	}

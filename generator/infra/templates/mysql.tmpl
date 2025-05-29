@@ -3,6 +3,7 @@ type MySQL struct {
 	User            string        `envconfig:"USER" required:"true"`
 	Password        string        `envconfig:"PASSWORD" required:"true"`
 	Host            string        `envconfig:"HOST" required:"true"`
+	Port            string        `envconfig:"PORT" default:"3306"`
 	Database        string        `envconfig:"DATABASE" required:"true"`
 	MaxIdleConns    int           `envconfig:"MAX_IDLE_CONNS" default:"10"`
 	MaxOpenConns    int           `envconfig:"MAX_OPEN_CONNS" default:"20"`
@@ -10,7 +11,8 @@ type MySQL struct {
 }
 
 func (db *MySQL) ConnString() string {
-	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true&loc=Local", db.User, db.Password, db.Host, db.Database)
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Local",
+		db.User, db.Password, db.Host, db.Port, db.Database)
 }
 {{ end }}
 
