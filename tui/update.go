@@ -24,6 +24,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dbList, cmd = m.dbList.Update(msg)
 	case stepInfraChoice:
 		m.infraList, cmd = m.infraList.Update(msg)
+	case stepTesty:
+		m.testyList, cmd = m.testyList.Update(msg)
 	}
 
 	switch msg := msg.(type) {
@@ -77,6 +79,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = stepInfraChoice
 
 			case stepInfraChoice:
+				if getSelectedDB(m.dbList.Items()) == config.DBTypePostgres {
+					m.step = stepTesty
+				} else {
+					m.step = stepDone
+				}
+			case stepTesty:
 				m.step = stepDone
 
 			case stepOpenAPIPath:
@@ -94,6 +102,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					OpenAPIPath: m.openapiPath,
 					DB:          getSelectedDB(m.dbList.Items()),
 					UseInfra:    getSelectedInfraCodes(m.infraList.Items()),
+					UseTesty:    getSelectedTesty(m.testyList.Items()),
 				}
 
 				return m, tea.Quit
@@ -114,6 +123,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					item.used = !item.used
 					m.infraList.SetItem(i, item)
 				}
+			case stepTesty:
+				i := m.testyList.Index()
+				if item, ok := m.testyList.Items()[i].(testyItem); ok {
+					item.selected = !item.selected
+					m.testyList.SetItem(i, item)
+				}
 			}
 		}
 	}
@@ -132,7 +147,7 @@ func getSelectedDB(items []list.Item) string {
 		}
 	}
 
-	return string(config.DBTypePostgres)
+	return config.DBTypePostgres
 }
 
 func getSelectedInfraCodes(items []list.Item) []string {
@@ -145,4 +160,14 @@ func getSelectedInfraCodes(items []list.Item) []string {
 	}
 
 	return result
+}
+
+func getSelectedTesty(items []list.Item) bool {
+	for _, it := range items {
+		if ti, ok := it.(testyItem); ok && ti.selected {
+			return true
+		}
+	}
+
+	return false
 }

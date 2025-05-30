@@ -19,6 +19,7 @@ const (
 	stepOpenAPIPath
 	stepDBChoice
 	stepInfraChoice
+	stepTesty
 	stepDone
 )
 
@@ -29,6 +30,7 @@ type Model struct {
 	input      textinput.Model
 	dbList     list.Model
 	infraList  list.Model
+	testyList  list.Model
 	confirmMsg string
 	errMsg     string
 	errTS      time.Time
@@ -85,12 +87,29 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	infraList.SetWidth(windowWidth)
 	infraList.SetHeight(20)
 
+	// ----- Testy -----
+	testyItems := []list.Item{
+		testyItem{
+			title:    "Generate test files using Testy framework",
+			selected: false,
+		},
+	}
+
+	testyList := list.New(testyItems, list.NewDefaultDelegate(), 0, 0)
+	testyList.Title = "Would you like to add Testy framework support for functional tests?"
+	testyList.SetShowStatusBar(false)
+	testyList.SetFilteringEnabled(false)
+	testyList.SetShowHelp(true)
+	testyList.SetWidth(windowWidth)
+	testyList.SetHeight(20)
+
 	return &Model{
 		projectConfig: projectCfg,
 		step:          stepProjectName,
 		input:         ti,
 		dbList:        dbList,
 		infraList:     infraList,
+		testyList:     testyList,
 	}
 }
 
