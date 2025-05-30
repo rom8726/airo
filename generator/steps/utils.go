@@ -47,6 +47,10 @@ func pkgDBDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(pkgDir(cfg), "db")
 }
 
+func pkgKafkaDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(pkgDir(cfg), "kafka")
+}
+
 func specsDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "specs")
 }

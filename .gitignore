@@ -27,3 +27,5 @@ go.work.sum
 
 proj1/
 bin/
+
+docs/tasks.md
