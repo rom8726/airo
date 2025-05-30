@@ -13,4 +13,5 @@ type ProjectConfig struct {
 	OpenAPIPath string
 	DB          string
 	UseInfra    []string
+	UseTesty    bool
 }

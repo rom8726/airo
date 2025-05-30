@@ -35,6 +35,7 @@ func (g *Generator) GenerateProject(ctx context.Context, cfg *config.ProjectConf
 		steps.DockerfileStep{},
 		steps.NewDevEnvStep(g.registry),
 		steps.GolangCIStep{},
+		steps.TestyStep{},
 		steps.GoModTidyStep{},
 	}
 
