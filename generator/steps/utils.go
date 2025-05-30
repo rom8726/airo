@@ -43,6 +43,10 @@ func pkgHttpServerDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(pkgDir(cfg), "httpserver")
 }
 
+func pkgDBDir(cfg *config.ProjectConfig) string {
+	return filepath.Join(pkgDir(cfg), "db")
+}
+
 func specsDir(cfg *config.ProjectConfig) string {
 	return filepath.Join(projectDir(cfg), "specs")
 }

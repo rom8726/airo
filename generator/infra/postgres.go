@@ -3,6 +3,7 @@ package infra
 import (
 	_ "embed"
 	"fmt"
+	"path/filepath"
 
 	"github.com/rom8726/airo/config"
 )
@@ -39,7 +40,9 @@ type PostgresProcessor struct {
 }
 
 func (p *PostgresProcessor) Import() string {
-	return "\"github.com/jackc/pgx/v5/pgxpool\""
+	pkgDBImport := "\"" + filepath.Join(p.cfg.ModuleName, "/pkg/db") + "\""
+
+	return "\"github.com/jackc/pgx/v5/pgxpool\"\n\t" + pkgDBImport
 }
 
 func (p *PostgresProcessor) Config() string {

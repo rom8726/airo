@@ -119,6 +119,7 @@ func (app *App) registerComponent(constructor any) *di.Provider {
 func (app *App) registerComponents() {
 	app.registerComponent(rest.New)
 	{{ if .HasSecurityHandler }}app.registerComponent(rest.NewSecurityHandler){{ end }}
+	{{ if eq .DB.Code "postgresql" }}app.registerComponent(db.NewTxManager).Arg(app.PostgresPool){{end}}
 	// TODO: register service components
 }
 
