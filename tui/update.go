@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"path/filepath"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -18,8 +19,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch m.step {
-	case stepProjectName, stepModuleName, stepOpenAPIPath:
+	case stepProjectName, stepModuleName:
 		m.input, cmd = m.input.Update(msg)
+	case stepOpenAPIPath:
+		if m.fileBrowser != nil {
+			var fbCmd tea.Cmd
+			m.fileBrowser, fbCmd = m.fileBrowser.Update(msg)
+			cmd = fbCmd
+		} else {
+			m.input, cmd = m.input.Update(msg)
+		}
 	case stepDBChoice:
 		m.dbList, cmd = m.dbList.Update(msg)
 	case stepInfraChoice:
@@ -51,10 +60,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.step = stepModuleName
 					m.input.SetValue(m.module)
 					m.input.Placeholder = "module name (e.g. github.com/user/myproject)"
+					// Reset file browser selection if it exists
+					if m.fileBrowser != nil {
+						m.fileBrowser.SetSelectedFile("")
+					}
 				case stepDBChoice:
 					m.step = stepOpenAPIPath
 					m.input.SetValue(m.openapiPath)
 					m.input.Placeholder = "Path to OpenAPI spec (e.g. example/server.yml)"
+					// If we have a file browser, set the selected file to the current openapiPath
+					if m.fileBrowser != nil && m.openapiPath != "" {
+						// Try to set the current directory to the directory containing the file
+						dir := filepath.Dir(m.openapiPath)
+						if dir != "." {
+							// Reinitialize the file browser with the directory of the current file
+							if fb, err := NewFileBrowser(dir, 80, 20); err == nil {
+								m.fileBrowser = fb
+							}
+						}
+					}
 				case stepInfraChoice:
 					m.step = stepDBChoice
 				case stepTesty:
@@ -118,12 +142,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = stepDone
 
 			case stepOpenAPIPath:
-				m.openapiPath = m.input.Value()
-				if m.openapiPath == "" {
-					return m, nil
+				if m.fileBrowser != nil && m.fileBrowser.SelectedFile() != "" {
+					m.openapiPath = m.fileBrowser.SelectedFile()
+					m.step = stepDBChoice
+				} else {
+					// Fallback to text input if file browser is not available or no file is selected
+					m.openapiPath = m.input.Value()
+					if m.openapiPath == "" {
+						return m, nil
+					}
+					m.step = stepDBChoice
 				}
-
-				m.step = stepDBChoice
 
 			case stepDone:
 				*m.projectConfig = config.ProjectConfig{

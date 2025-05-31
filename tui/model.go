@@ -26,14 +26,15 @@ const (
 const windowWidth = 80
 
 type Model struct {
-	step       step
-	input      textinput.Model
-	dbList     list.Model
-	infraList  list.Model
-	testyList  list.Model
-	confirmMsg string
-	errMsg     string
-	errTS      time.Time
+	step        step
+	input       textinput.Model
+	dbList      list.Model
+	infraList   list.Model
+	testyList   list.Model
+	fileBrowser *FileBrowser
+	confirmMsg  string
+	errMsg      string
+	errTS       time.Time
 
 	project     string
 	module      string
@@ -49,6 +50,14 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	ti.Focus()
 	ti.CharLimit = 64
 	ti.Width = windowWidth
+
+	// Initialize file browser
+	fb, err := NewFileBrowser("", windowWidth, 20)
+	if err != nil {
+		// If there's an error, we'll continue without the file browser
+		// and fall back to text input for the file path
+		fb = nil
+	}
 
 	// ----- DB -----
 	dbInfos := registry.ListDBs()
@@ -110,6 +119,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 		dbList:        dbList,
 		infraList:     infraList,
 		testyList:     testyList,
+		fileBrowser:   fb,
 	}
 }
 

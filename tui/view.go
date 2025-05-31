@@ -34,6 +34,13 @@ func (m *Model) View() string {
 			errDisplay,
 			navHelp)
 	case stepOpenAPIPath:
+		if m.fileBrowser != nil {
+			return fmt.Sprintf("Step 3 of 6: API Specification\n\n%s%s%s",
+				m.fileBrowser.View(),
+				errDisplay,
+				navHelp)
+		}
+		// Fallback to text input if file browser is not available
 		return fmt.Sprintf("Step 3 of 6: API Specification\n\nInput OpenAPI YAML path:\n(e.g., example/server.yml)\n\n%s%s%s",
 			m.input.View(),
 			errDisplay,
