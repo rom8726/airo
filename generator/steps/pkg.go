@@ -26,6 +26,9 @@ var txCtxGo []byte
 //go:embed files/pkg/db/tx_manager_pg.go.example
 var txManagerGoPG []byte
 
+//go:embed files/pkg/db/tx_manager_mysql.go.example
+var txManagerGoMySQL []byte
+
 // kafka
 //
 //go:embed files/pkg/kafka/consumer.go.example
@@ -71,6 +74,10 @@ func (PkgStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	switch cfg.DB {
 	case config.DBTypePostgres:
 		if err := copyPkgDB(cfg, txManagerGoPG); err != nil {
+			return fmt.Errorf("failed to copy pkg/db: %w", err)
+		}
+	case config.DBTypeMySQL:
+		if err := copyPkgDB(cfg, txManagerGoMySQL); err != nil {
 			return fmt.Errorf("failed to copy pkg/db: %w", err)
 		}
 	default:

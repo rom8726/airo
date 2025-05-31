@@ -1,0 +1,63 @@
+//nolint:gocritic // do not lint this code
+package db
+
+import (
+	"context"
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
+)
+
+type Tx interface {
+	Query(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRow(ctx context.Context, query string, args ...any) *sql.Row
+	Exec(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+type TxManager interface {
+	ReadCommitted(ctx context.Context, fn func(ctx context.Context) error) error
+	RepeatableRead(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
+type TxManagerImpl struct {
+	db *sql.DB
+}
+
+func NewTxManager(db *sql.DB) *TxManagerImpl {
+	return &TxManagerImpl{
+		db: db,
+	}
+}
+
+func (m *TxManagerImpl) ReadCommitted(ctx context.Context, fn func(ctx context.Context) error) error {
+	return m.run(ctx, sql.LevelReadCommitted, fn)
+}
+
+func (m *TxManagerImpl) RepeatableRead(ctx context.Context, fn func(ctx context.Context) error) error {
+	return m.run(ctx, sql.LevelRepeatableRead, fn)
+}
+
+func (m *TxManagerImpl) run(ctx context.Context, isolationLevel sql.IsolationLevel, fn func(ctx context.Context) error) error {
+	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: isolationLevel})
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			_ = tx.Rollback()
+
+			panic(r)
+		}
+	}()
+
+	txCtx := context.WithValue(ctx, txKey{}, tx)
+
+	if err := fn(txCtx); err != nil {
+		_ = tx.Rollback()
+
+		return err
+	}
+
+	return tx.Commit()
+}
