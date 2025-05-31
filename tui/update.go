@@ -39,6 +39,36 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			*m.projectConfig = config.ProjectConfig{Aborted: true}
 
 			return m, tea.Quit
+		case tea.KeyBackspace:
+			// Handle going back to previous step
+			if m.step > stepProjectName {
+				switch m.step {
+				case stepModuleName:
+					m.step = stepProjectName
+					m.input.SetValue(m.project)
+					m.input.Placeholder = "project-name"
+				case stepOpenAPIPath:
+					m.step = stepModuleName
+					m.input.SetValue(m.module)
+					m.input.Placeholder = "module name (e.g. github.com/user/myproject)"
+				case stepDBChoice:
+					m.step = stepOpenAPIPath
+					m.input.SetValue(m.openapiPath)
+					m.input.Placeholder = "Path to OpenAPI spec (e.g. example/server.yml)"
+				case stepInfraChoice:
+					m.step = stepDBChoice
+				case stepTesty:
+					m.step = stepInfraChoice
+				case stepDone:
+					// If we came from Testy step, go back there
+					if getSelectedDB(m.dbList.Items()) == config.DBTypePostgres {
+						m.step = stepTesty
+					} else {
+						// Otherwise go back to infra choice
+						m.step = stepInfraChoice
+					}
+				}
+			}
 		case tea.KeyEnter:
 			switch m.step {
 			case stepProjectName:

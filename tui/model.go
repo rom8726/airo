@@ -62,7 +62,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	}
 
 	dbList := list.New(dbItems, list.NewDefaultDelegate(), 0, 0)
-	dbList.Title = "Choose database ([space] — select, [enter] — continue)"
+	dbList.Title = "Choose a database for your project (use [space] to select)"
 	dbList.SetShowStatusBar(false)
 	dbList.SetFilteringEnabled(false)
 	dbList.SetShowHelp(true)
@@ -80,7 +80,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	}
 
 	infraList := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	infraList.Title = "Choose infrastructure ([space] — make choose, [enter] — continue)"
+	infraList.Title = "Choose infrastructure components (use [space] to toggle selection)"
 	infraList.SetShowStatusBar(false)
 	infraList.SetFilteringEnabled(false)
 	infraList.SetShowHelp(true)
@@ -96,7 +96,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	}
 
 	testyList := list.New(testyItems, list.NewDefaultDelegate(), 0, 0)
-	testyList.Title = "Would you like to add Testy framework support for functional tests?"
+	testyList.Title = "Testing framework options (use [space] to toggle selection)"
 	testyList.SetShowStatusBar(false)
 	testyList.SetFilteringEnabled(false)
 	testyList.SetShowHelp(true)
