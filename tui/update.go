@@ -108,6 +108,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Tick(errTimeout, func(time.Time) tea.Msg { return clearErrMsg{} })
 				}
 
+				// Check if directory with this name already exists
+				if err := validate.DirectoryExists(m.project); err != nil {
+					m.errMsg = err.Error()
+					m.errTS = time.Now()
+
+					return m, tea.Tick(errTimeout, func(time.Time) tea.Msg { return clearErrMsg{} })
+				}
+
 				m.input.SetValue("")
 				m.input.Placeholder = "module name (e.g. github.com/user/myproject)"
 				m.step = stepModuleName

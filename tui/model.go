@@ -46,7 +46,7 @@ type Model struct {
 
 func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *Model {
 	ti := textinput.New()
-	ti.Placeholder = "project-name"
+	ti.Placeholder = "Enter a name (letters, numbers, hyphens, underscores)"
 	ti.Focus()
 	ti.CharLimit = 64
 	ti.Width = windowWidth
