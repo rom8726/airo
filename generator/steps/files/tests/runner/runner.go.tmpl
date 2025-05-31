@@ -3,6 +3,7 @@ package runner
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/url"
@@ -27,6 +28,8 @@ type Config struct {
 func Run(t *testing.T, testCfg *Config) {
 	t.Helper()
 
+	env := NewEnv()
+
 	postgresContainer, err := postgres.Run(t.Context(),
 		"postgres:16",
 		postgres.WithDatabase("test_db"),
@@ -50,9 +53,69 @@ func Run(t *testing.T, testCfg *Config) {
 	require.NoError(t, err)
 
 	pgPort := extractPort(connStr)
-
-	env := NewEnv()
 	env.Set("POSTGRES_PORT", pgPort)
+
+{{- range $infra := .UseInfra }}
+{{- if eq $infra "redis" }}
+	// Initialize Redis container
+	redisContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "redis:7-alpine",
+			ExposedPorts: []string{"6379/tcp"},
+			Env: map[string]string{
+				"REDIS_PASSWORD": "password",
+			},
+			WaitingFor: wait.ForLog("Ready to accept connections"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := redisContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate redis container: %s", err)
+		}
+	})
+
+	redisPort, err := redisContainer.MappedPort(t.Context(), "6379")
+	require.NoError(t, err)
+
+	env.Set("REDIS_PORT", redisPort.Port())
+{{ end }}
+{{- if eq $infra "kafka" }}
+	// Initialize Kafka container
+	kafkaContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "bitnami/kafka:3.5",
+			ExposedPorts: []string{"9092/tcp"},
+			Env: map[string]string{
+				"KAFKA_CFG_NODE_ID": "0",
+				"KAFKA_CFG_PROCESS_ROLES": "controller,broker",
+				"KAFKA_CFG_LISTENERS": "PLAINTEXT://:9092,CONTROLLER://:9093",
+				"KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP": "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+				"KAFKA_CFG_CONTROLLER_QUORUM_VOTERS": "0@kafka:9093",
+				"KAFKA_CFG_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
+				"ALLOW_PLAINTEXT_LISTENER": "yes",
+			},
+			WaitingFor: wait.ForLog("Kafka Server started"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := kafkaContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate kafka container: %s", err)
+		}
+	})
+
+	kafkaPort, err := kafkaContainer.MappedPort(t.Context(), "9092")
+	require.NoError(t, err)
+
+	env.Set("KAFKA_PORT", kafkaPort.Port())
+	env.Set("KAFKA_BROKERS", fmt.Sprintf("localhost:%s", kafkaPort.Port()))
+{{- end }}
+{{ end }}
 	env.SetUp()
 	defer env.CleanUp()
 

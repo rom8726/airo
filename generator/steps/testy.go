@@ -57,10 +57,12 @@ func (TestyStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	defer fRunner.Close()
 
 	type renderData struct {
-		Module string
+		Module   string
+		UseInfra []string
 	}
 	data := renderData{
-		Module: cfg.ModuleName,
+		Module:   cfg.ModuleName,
+		UseInfra: cfg.UseInfra,
 	}
 
 	tmpl, err := template.New("test_runner").Parse(testsRunnerGoTemplate)
