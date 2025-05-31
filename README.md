@@ -13,6 +13,9 @@ Spec-first Golang project scaffold generator
   - Redis integration (optional)
   - Kafka integration (optional)
   - Database migrations support
+  - Database transactions manager (PostgreSQL and MySQL)
+  - Library for working with Kafka
+  - Testy **[rom8726/testy]** integration needed code for functional tests (Only if database is PostgreSQL now)
   - Health-check, Prometheus metrics, pprof endpoints
   - Structured logging with slog
 - **Docker-ready** – `Dockerfile`, `docker-compose.yml`, `Makefile` are scaffolded for you.
