@@ -16,22 +16,39 @@ func (m *Model) View() string {
 		navHelp = "\n\n[Enter] to generate project • [Backspace] to go back • [Esc] to quit"
 	}
 
-	// Progress indicator
-	progressBar := fmt.Sprintf("Step %d of 6: ", m.step+1)
-	for i := 0; i < 6; i++ {
-		if i < int(m.step) {
-			progressBar += "● " // Completed step
-		} else if i == int(m.step) {
-			progressBar += "○ " // Current step
-		} else {
-			progressBar += "· " // Future step
+	// Progress indicator with step names
+	stepNames := []string{"Project", "Module", "OpenAPI", "Database", "Infrastructure", "Testing"}
+	currentStep := int(m.step)
+
+	var progressBar string
+	if m.step == stepDone {
+		progressBar = "Configuration complete!\n"
+	} else {
+		progressBar = fmt.Sprintf("Step %d of 6: %s\n", currentStep+1, stepNames[currentStep])
+	}
+	progressBar += "["
+	if m.step == stepDone {
+		// All steps are completed
+		for i := 0; i < 6; i++ {
+			progressBar += "✅" // All steps completed
+		}
+	} else {
+		for i := 0; i < 6; i++ {
+			if i < currentStep {
+				progressBar += "✅" // Completed step
+			} else if i == currentStep {
+				progressBar += "🔶" // Current step
+			} else {
+				progressBar += "⬜" // Future step
+			}
 		}
 	}
+	progressBar += "]"
 
 	// Error message display
 	errDisplay := ""
 	if m.errMsg != "" {
-		errDisplay = fmt.Sprintf("\n\n❌ Error: %s", m.errMsg)
+		errDisplay = fmt.Sprintf("\n\n❌ ERROR ❌\n%s\n❌ ERROR ❌", m.errMsg)
 	}
 
 	switch m.step {
@@ -84,22 +101,51 @@ func (m *Model) View() string {
 			useTesty = "enabled"
 		}
 
-		// Create a more visually appealing summary
+		// Create a more visually appealing summary with a border
+		border := "┌─────────────────────────────────────────────────────┐\n"
+		border += "│                                                     │\n"
+		border += "│            ✨ CONFIGURATION SUMMARY ✨              │\n"
+		border += "│                                                     │\n"
+		border += "├─────────────────────────────────────────────────────┤\n"
+
+		// Format each line with proper spacing
+		projectLine := fmt.Sprintf("│  📁 Project:  %-37s │\n", m.project)
+		moduleLine := fmt.Sprintf("│  📦 Module:   %-37s │\n", m.module)
+
+		// Truncate OpenAPI path if too long
+		openAPIPath := m.openapiPath
+		if len(openAPIPath) > 37 {
+			openAPIPath = "..." + openAPIPath[len(openAPIPath)-34:]
+		}
+		openAPILine := fmt.Sprintf("│  📄 OpenAPI:  %-37s │\n", openAPIPath)
+
+		dbLine := fmt.Sprintf("│  🗄️  Database: %-37s │\n", db)
+
+		// Format infra components
+		infraStr := strings.Join(selected, ", ")
+		if len(infraStr) == 0 {
+			infraStr = "none"
+		}
+		if len(infraStr) > 37 {
+			infraStr = infraStr[:34] + "..."
+		}
+		infraLine := fmt.Sprintf("│  🔧 Infra:    %-37s │\n", infraStr)
+
+		testyLine := fmt.Sprintf("│  🧪 Testy:    %-37s │\n", useTesty)
+
+		border += projectLine
+		border += moduleLine
+		border += openAPILine
+		border += dbLine
+		border += infraLine
+		border += testyLine
+		border += "│                                                     │\n"
+		border += "└─────────────────────────────────────────────────────┘\n"
+
 		return fmt.Sprintf(
-			"%s\n✨ Summary of Your Configuration ✨\n\n"+
-			"📁 Project:  %s\n"+
-			"📦 Module:   %s\n"+
-			"📄 OpenAPI:  %s\n"+
-			"🗄️  Database: %s\n"+
-			"🔧 Infra:    %s\n"+
-			"🧪 Testy:    %s%s",
+			"%s\n%s\n\n🎉 Your project is ready to be generated! 🎉%s",
 			progressBar,
-			m.project,
-			m.module,
-			m.openapiPath,
-			db,
-			strings.Join(selected, ", "),
-			useTesty,
+			border,
 			navHelp,
 		)
 	default:
