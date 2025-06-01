@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,13 +31,28 @@ func Run(t *testing.T, testCfg *Config) {
 
 	env := NewEnv()
 
+	var connStr string
+	var err error
+
+	{{- if eq .DB "mysql" }}
+	// MySQL ------------------------------------------------------------------
+	mysqlContainer, mysqlDown := startMySQL(t)
+	defer mysqlDown()
+
+	mysqlPort, err := mysqlContainer.MappedPort(t.Context(), "3306")
+	require.NoError(t, err)
+	env.Set("MYSQL_PORT", mysqlPort.Port())
+
+	connStr = fmt.Sprintf("user:password@tcp(localhost:%s)/test_db?parseTime=true", mysqlPort.Port())
+	{{- else }}
 	// Postgres ---------------------------------------------------------------
 	pgContainer, pgDown := startPostgres(t)
 	defer pgDown()
 
-	connStr, err := pgContainer.ConnectionString(t.Context(), "sslmode=disable")
+	connStr, err = pgContainer.ConnectionString(t.Context(), "sslmode=disable")
 	require.NoError(t, err)
 	env.Set("POSTGRES_PORT", extractPort(connStr))
+	{{- end }}
 
 	{{- range $infra := .UseInfra }}
 	{{- if eq $infra "redis" }}
@@ -157,6 +173,33 @@ func startPostgres(t *testing.T) (*postgres.PostgresContainer, func()) {
 	return container, func() {
 		if err := container.Terminate(context.Background()); err != nil {
 			t.Fatalf("terminate postgres: %v", err)
+		}
+	}
+}
+
+// MySQL --------------------------------------------------------------------
+func startMySQL(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "mysql:8",
+			ExposedPorts: []string{"3306/tcp"},
+			Env: map[string]string{
+				"MYSQL_DATABASE":      "test_db",
+				"MYSQL_USER":          "user",
+				"MYSQL_PASSWORD":      "password",
+				"MYSQL_ROOT_PASSWORD": "root_password",
+			},
+			WaitingFor: wait.ForLog("port: 3306  MySQL Community Server"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate mysql: %v", err)
 		}
 	}
 }
@@ -326,8 +369,27 @@ func startElasticsearch(t *testing.T) (testcontainers.Container, func()) {
 {{- end }}
 {{- end }}
 
-// extractPort парсит строку подключения и возвращает порт Postgres.
+// extractPort парсит строку подключения и возвращает порт базы данных.
 func extractPort(connStr string) string {
+	// Check if it's a MySQL connection string (user:password@tcp(host:port)/dbname)
+	if strings.Contains(connStr, "@tcp(") {
+		start := strings.Index(connStr, "@tcp(")
+		if start == -1 {
+			return ""
+		}
+		start += 5 // Skip "@tcp("
+
+		end := strings.Index(connStr[start:], ")")
+		if end == -1 {
+			return ""
+		}
+
+		hostPort := connStr[start : start+end]
+		_, port, _ := net.SplitHostPort(hostPort)
+		return port
+	}
+
+	// Otherwise, assume it's a PostgreSQL connection string (postgres://user:password@host:port/dbname)
 	u, err := url.Parse(connStr)
 	if err != nil {
 		return ""

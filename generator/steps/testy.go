@@ -15,8 +15,11 @@ import (
 //go:embed files/tests/runner/env.go.example
 var testsRunnerEnvGo []byte
 
-//go:embed files/tests/runner/migrate.go.example
-var testsRunnerMigrateGo []byte
+//go:embed files/tests/runner/migrate_postgresql.go.example
+var testsRunnerMigratePostgresGo []byte
+
+//go:embed files/tests/runner/migrate_mysql.go.example
+var testsRunnerMigrateMySQLGo []byte
 
 //go:embed files/tests/runner/runner.go.tmpl
 var testsRunnerGoTemplate string
@@ -45,7 +48,18 @@ func (TestyStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 
 	migrateFilePath := filepath.Join(dir, "migrate.go")
-	if err := os.WriteFile(migrateFilePath, testsRunnerMigrateGo, 0644); err != nil {
+	var migrateFileContent []byte
+	switch cfg.DB {
+	case config.DBTypeMySQL:
+		migrateFileContent = testsRunnerMigrateMySQLGo
+	case config.DBTypePostgres:
+		migrateFileContent = testsRunnerMigratePostgresGo
+	default:
+		// Default to PostgreSQL for backward compatibility
+		migrateFileContent = testsRunnerMigratePostgresGo
+	}
+
+	if err := os.WriteFile(migrateFilePath, migrateFileContent, 0644); err != nil {
 		return fmt.Errorf("write file %q failed: %w", migrateFilePath, err)
 	}
 
@@ -59,10 +73,12 @@ func (TestyStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	type renderData struct {
 		Module   string
 		UseInfra []string
+		DB       string
 	}
 	data := renderData{
 		Module:   cfg.ModuleName,
 		UseInfra: cfg.UseInfra,
+		DB:       cfg.DB,
 	}
 
 	tmpl, err := template.New("test_runner").Parse(testsRunnerGoTemplate)

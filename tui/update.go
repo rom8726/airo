@@ -85,7 +85,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.step = stepInfraChoice
 				case stepDone:
 					// If we came from Testy step, go back there
-					if getSelectedDB(m.dbList.Items()) == config.DBTypePostgres {
+					selectedDB := getSelectedDB(m.dbList.Items())
+					if selectedDB == config.DBTypePostgres || selectedDB == config.DBTypeMySQL {
 						m.step = stepTesty
 					} else {
 						// Otherwise go back to infra choice
@@ -141,7 +142,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = stepInfraChoice
 
 			case stepInfraChoice:
-				if getSelectedDB(m.dbList.Items()) == config.DBTypePostgres {
+				selectedDB := getSelectedDB(m.dbList.Items())
+				if selectedDB == config.DBTypePostgres || selectedDB == config.DBTypeMySQL {
 					m.step = stepTesty
 				} else {
 					m.step = stepDone
