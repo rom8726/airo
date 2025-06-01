@@ -12,6 +12,12 @@ Spec-first Golang project scaffold generator
   - MongoDB integration
   - Redis integration (optional)
   - Kafka integration (optional)
+  - Memcache (optional)
+  - Etcd (optional)
+  - Aerospike (optional)
+  - ElasticSearch (optional)
+  - Nats (optional)
+  - RabbitMQ (optional)
   - Database migrations support
   - Database transactions manager (PostgreSQL and MySQL)
   - Library for working with Kafka
