@@ -115,6 +115,166 @@ func Run(t *testing.T, testCfg *Config) {
 	env.Set("KAFKA_PORT", kafkaPort.Port())
 	env.Set("KAFKA_BROKERS", fmt.Sprintf("localhost:%s", kafkaPort.Port()))
 {{- end }}
+{{- if eq $infra "etcd" }}
+	// Initialize Etcd container
+	etcdContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "bitnami/etcd:latest",
+			ExposedPorts: []string{"2379/tcp"},
+			Env: map[string]string{
+				"ALLOW_NONE_AUTHENTICATION": "yes",
+				"ETCD_ADVERTISE_CLIENT_URLS": "http://0.0.0.0:2379",
+			},
+			WaitingFor: wait.ForLog("ready to serve client requests"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := etcdContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate etcd container: %s", err)
+		}
+	})
+
+	etcdPort, err := etcdContainer.MappedPort(t.Context(), "2379")
+	require.NoError(t, err)
+
+	env.Set("ETCD_ENDPOINTS", fmt.Sprintf("localhost:%s", etcdPort.Port()))
+{{- end }}
+{{- if eq $infra "nats" }}
+	// Initialize NATS container
+	natsContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "nats:latest",
+			ExposedPorts: []string{"4222/tcp"},
+			Cmd: []string{"--jetstream"},
+			WaitingFor: wait.ForLog("Server is ready"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := natsContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate nats container: %s", err)
+		}
+	})
+
+	natsPort, err := natsContainer.MappedPort(t.Context(), "4222")
+	require.NoError(t, err)
+
+	env.Set("NATS_URL", fmt.Sprintf("nats://localhost:%s", natsPort.Port()))
+{{- end }}
+{{- if eq $infra "rabbitmq" }}
+	// Initialize RabbitMQ container
+	rabbitmqContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "rabbitmq:3-management",
+			ExposedPorts: []string{"5672/tcp"},
+			Env: map[string]string{
+				"RABBITMQ_DEFAULT_USER": "guest",
+				"RABBITMQ_DEFAULT_PASS": "guest",
+			},
+			WaitingFor: wait.ForLog("Server startup complete"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := rabbitmqContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate rabbitmq container: %s", err)
+		}
+	})
+
+	rabbitmqPort, err := rabbitmqContainer.MappedPort(t.Context(), "5672")
+	require.NoError(t, err)
+
+	env.Set("RABBITMQ_PORT", rabbitmqPort.Port())
+	env.Set("RABBITMQ_HOST", "localhost")
+{{- end }}
+{{- if eq $infra "elasticsearch" }}
+	// Initialize Elasticsearch container
+	elasticsearchContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "docker.elastic.co/elasticsearch/elasticsearch:8.6.0",
+			ExposedPorts: []string{"9200/tcp"},
+			Env: map[string]string{
+				"discovery.type": "single-node",
+				"xpack.security.enabled": "false",
+				"ES_JAVA_OPTS": "-Xms512m -Xmx512m",
+			},
+			WaitingFor: wait.ForLog("started").WithStartupTimeout(60*time.Second),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := elasticsearchContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate elasticsearch container: %s", err)
+		}
+	})
+
+	elasticsearchPort, err := elasticsearchContainer.MappedPort(t.Context(), "9200")
+	require.NoError(t, err)
+
+	env.Set("ELASTICSEARCH_URL", fmt.Sprintf("http://localhost:%s", elasticsearchPort.Port()))
+{{- end }}
+{{- if eq $infra "memcache" }}
+	// Initialize Memcache container
+	memcacheContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "memcached:alpine",
+			ExposedPorts: []string{"11211/tcp"},
+			Cmd: []string{"memcached", "-m", "64"},
+			WaitingFor: wait.ForListeningPort("11211/tcp").WithStartupTimeout(10*time.Second),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := memcacheContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate memcache container: %s", err)
+		}
+	})
+
+	memcachePort, err := memcacheContainer.MappedPort(t.Context(), "11211")
+	require.NoError(t, err)
+
+	env.Set("MEMCACHE_PORT", memcachePort.Port())
+	env.Set("MEMCACHE_HOST", "localhost")
+{{- end }}
+{{- if eq $infra "aerospike" }}
+	// Initialize Aerospike container
+	aerospikeContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "aerospike/aerospike-server:latest",
+			ExposedPorts: []string{"3000/tcp"},
+			Env: map[string]string{
+				"NAMESPACE": "test",
+			},
+			WaitingFor: wait.ForListeningPort("3000/tcp").WithStartupTimeout(30*time.Second),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if err := aerospikeContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate aerospike container: %s", err)
+		}
+	})
+
+	aerospikePort, err := aerospikeContainer.MappedPort(t.Context(), "3000")
+	require.NoError(t, err)
+
+	env.Set("AEROSPIKE_PORT", aerospikePort.Port())
+	env.Set("AEROSPIKE_HOST", "localhost")
+	env.Set("AEROSPIKE_NAMESPACE", "test")
+{{- end }}
 {{ end }}
 	env.SetUp()
 	defer env.CleanUp()
