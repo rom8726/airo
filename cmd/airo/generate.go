@@ -35,6 +35,7 @@ func runGenerateCmd(ctx context.Context) error {
 		infra.WithKafka(),
 		infra.WithElasticsearch(),
 		infra.WithEtcd(),
+		infra.WithNats(),
 	)
 
 	var projectConfig config.ProjectConfig

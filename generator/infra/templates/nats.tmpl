@@ -1,0 +1,57 @@
+{{ define "config" }}
+type Nats struct {
+	URL      string `envconfig:"URL" required:"true"`
+	Username string `envconfig:"USERNAME" required:"false"`
+	Password string `envconfig:"PASSWORD" required:"false"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newNatsClient(ctx context.Context, cfg *config.Nats) (*nats.Conn, error) {
+	opts := []nats.Option{}
+	
+	if cfg.Username != "" && cfg.Password != "" {
+		opts = append(opts, nats.UserInfo(cfg.Username, cfg.Password))
+	}
+	
+	// Add connection timeout
+	opts = append(opts, nats.Timeout(5*time.Second))
+	
+	// Add reconnect options
+	opts = append(opts, nats.ReconnectWait(1*time.Second))
+	opts = append(opts, nats.MaxReconnects(10))
+	
+	// Connect to NATS server
+	nc, err := nats.Connect(cfg.URL, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("connect to NATS: %w", err)
+	}
+	
+	return nc, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	natsClient, err := newNatsClient(ctx, &cfg.Nats)
+	if err != nil {
+		return nil, fmt.Errorf("create NATS client: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.NatsClient != nil {
+		app.NatsClient.Close()
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-nats:
+    image: 'nats:latest'
+    container_name: {{ .ProjectName }}-nats
+    command: "--jetstream"
+    volumes:
+      - "nats_{{ .ProjectName }}:/data"
+    ports:
+      - '4222:4222'
+      - '8222:8222'
+{{ end }}
