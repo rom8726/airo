@@ -1,0 +1,64 @@
+{{ define "config" }}
+type Aerospike struct {
+	Host      string `envconfig:"HOST" required:"true"`
+	Port      int    `envconfig:"PORT" required:"true"`
+	Namespace string `envconfig:"NAMESPACE" required:"true"`
+	Username  string `envconfig:"USERNAME" required:"false"`
+	Password  string `envconfig:"PASSWORD" required:"false"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newAerospikeClient(ctx context.Context, cfg *config.Aerospike) (*aerospike.Client, error) {
+	clientPolicy := aerospike.NewClientPolicy()
+	
+	// Set authentication if provided
+	if cfg.Username != "" && cfg.Password != "" {
+		clientPolicy.User = cfg.Username
+		clientPolicy.Password = cfg.Password
+	}
+	
+	// Set timeout
+	clientPolicy.Timeout = 5 * time.Second
+	
+	// Create a new client
+	client, err := aerospike.NewClientWithPolicy(clientPolicy, cfg.Host, cfg.Port)
+	if err != nil {
+		return nil, fmt.Errorf("create aerospike client: %w", err)
+	}
+	
+	// Test connection
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("failed to connect to aerospike server")
+	}
+	
+	return client, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	aerospikeClient, err := newAerospikeClient(ctx, &cfg.Aerospike)
+	if err != nil {
+		return nil, fmt.Errorf("create aerospike client: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.AerospikeClient != nil {
+		app.AerospikeClient.Close()
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-aerospike:
+    image: 'aerospike/aerospike-server:latest'
+    container_name: {{ .ProjectName }}-aerospike
+    volumes:
+      - "aerospike_{{ .ProjectName }}:/opt/aerospike/data"
+    ports:
+      - '3000:3000'
+      - '3001:3001'
+      - '3002:3002'
+    environment:
+      - NAMESPACE={{ .ProjectName }}
+{{ end }}

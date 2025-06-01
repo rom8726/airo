@@ -38,6 +38,7 @@ func runGenerateCmd(ctx context.Context) error {
 		infra.WithNats(),
 		infra.WithMemcache(),
 		infra.WithRabbitMQ(),
+		infra.WithAerospike(),
 	)
 
 	var projectConfig config.ProjectConfig

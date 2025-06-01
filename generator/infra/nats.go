@@ -21,7 +21,7 @@ func WithNats() RegistryOption {
 		"nats",
 		"NATS",
 		NewNatsProcessor(),
-		1,
+		5,
 	)
 }
 

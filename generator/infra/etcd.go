@@ -21,7 +21,7 @@ func WithEtcd() RegistryOption {
 		"etcd",
 		"Etcd",
 		NewEtcdProcessor(),
-		1,
+		3,
 	)
 }
 

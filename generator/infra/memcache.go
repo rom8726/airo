@@ -20,7 +20,7 @@ func WithMemcache() RegistryOption {
 		"memcache",
 		"Memcache",
 		NewMemcacheProcessor(),
-		1,
+		4,
 	)
 }
 

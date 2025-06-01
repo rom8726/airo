@@ -22,7 +22,7 @@ func WithElasticsearch() RegistryOption {
 		"elasticsearch", // Code used to identify this component
 		"Elasticsearch", // Human-readable title
 		NewElasticsearchProcessor(),
-		3, // Order in the list
+		7, // Order in the list
 	)
 }
 

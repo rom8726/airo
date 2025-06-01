@@ -23,7 +23,7 @@ func WithRabbitMQ() RegistryOption {
 		"rabbitmq",
 		"RabbitMQ",
 		NewRabbitMQProcessor(),
-		1,
+		6,
 	)
 }
 
@@ -34,7 +34,7 @@ var tmplRabbitMQ string
 func NewRabbitMQProcessor() Processor {
 	return NewDefaultProcessor(tmplRabbitMQ,
 		WithImport(func(*config.ProjectConfig) string {
-			return `"github.com/rabbitmq/amqp091-go"`
+			return `amqp "github.com/rabbitmq/amqp091-go"`
 		}),
 		WithConfigField("RabbitMQ RabbitMQ `envconfig:\"RABBITMQ\"`"),
 		WithConfigFieldName("RabbitMQ"),
