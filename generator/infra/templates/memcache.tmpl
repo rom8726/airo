@@ -1,0 +1,40 @@
+{{ define "config" }}
+type Memcache struct {
+	Host     string `envconfig:"HOST" required:"true"`
+	Port     int    `envconfig:"PORT" required:"true"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newMemcacheClient(ctx context.Context, cfg *config.Memcache) (*memcache.Client, error) {
+	client := memcache.New(net.JoinHostPort(cfg.Host, fmt.Sprint(cfg.Port)))
+	
+	// Test connection
+	err := client.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("ping: %w", err)
+	}
+	
+	return client, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	memcacheClient, err := newMemcacheClient(ctx, &cfg.Memcache)
+	if err != nil {
+		return nil, fmt.Errorf("create memcache client: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	// Memcache client doesn't have a close method
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-memcache:
+    image: 'memcached:alpine'
+    container_name: {{ .ProjectName }}-memcache
+    ports:
+      - '11211:11211'
+    command: memcached -m 64
+{{ end }}

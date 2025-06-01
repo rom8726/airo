@@ -36,6 +36,7 @@ func runGenerateCmd(ctx context.Context) error {
 		infra.WithElasticsearch(),
 		infra.WithEtcd(),
 		infra.WithNats(),
+		infra.WithMemcache(),
 	)
 
 	var projectConfig config.ProjectConfig
