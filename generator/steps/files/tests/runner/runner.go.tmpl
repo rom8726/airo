@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rom8726/pgfixtures"
 	"github.com/rom8726/testy"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -36,6 +37,7 @@ func Run(t *testing.T, testCfg *Config) {
 
 	{{- if eq .DB "mysql" }}
 	// MySQL ------------------------------------------------------------------
+	dbType := pgfixtures.MySQL
 	mysqlContainer, mysqlDown := startMySQL(t)
 	defer mysqlDown()
 
@@ -46,6 +48,7 @@ func Run(t *testing.T, testCfg *Config) {
 	connStr = fmt.Sprintf("user:password@tcp(localhost:%s)/test_db?parseTime=true", mysqlPort.Port())
 	{{- else }}
 	// Postgres ---------------------------------------------------------------
+	dbType := pgfixtures.PostgreSQL
 	pgContainer, pgDown := startPostgres(t)
 	defer pgDown()
 
@@ -146,6 +149,7 @@ func Run(t *testing.T, testCfg *Config) {
 
 	testyCfg := testy.Config{
 		Handler:     app.APIServer.Handler,
+		DBType:      dbType,
 		CasesDir:    testCfg.CasesDir,
 		FixturesDir: "./fixtures",
 		ConnStr:     connStr,
