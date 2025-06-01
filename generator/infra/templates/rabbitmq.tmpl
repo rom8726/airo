@@ -1,0 +1,64 @@
+{{ define "config" }}
+type RabbitMQ struct {
+	Host     string `envconfig:"HOST" required:"true"`
+	Port     int    `envconfig:"PORT" required:"true"`
+	Username string `envconfig:"USERNAME" required:"false"`
+	Password string `envconfig:"PASSWORD" required:"false"`
+	VHost    string `envconfig:"VHOST" required:"false"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newRabbitMQClient(ctx context.Context, cfg *config.RabbitMQ) (*amqp.Connection, error) {
+	// Build connection URL
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d/%s",
+		cfg.Username,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.VHost)
+	
+	// Connect to RabbitMQ server
+	conn, err := amqp.Dial(url)
+	if err != nil {
+		return nil, fmt.Errorf("connect to RabbitMQ: %w", err)
+	}
+	
+	// Test connection by creating a channel
+	ch, err := conn.Channel()
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("create channel: %w", err)
+	}
+	defer ch.Close()
+	
+	return conn, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	rabbitMQConn, err := newRabbitMQClient(ctx, &cfg.RabbitMQ)
+	if err != nil {
+		return nil, fmt.Errorf("create RabbitMQ client: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.RabbitMQConn != nil {
+		_ = app.RabbitMQConn.Close()
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-rabbitmq:
+    image: 'rabbitmq:3-management'
+    container_name: {{ .ProjectName }}-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - "rabbitmq_{{ .ProjectName }}:/var/lib/rabbitmq"
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+{{ end }}
