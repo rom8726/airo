@@ -30,254 +30,77 @@ func Run(t *testing.T, testCfg *Config) {
 
 	env := NewEnv()
 
-	postgresContainer, err := postgres.Run(t.Context(),
-		"postgres:16",
-		postgres.WithDatabase("test_db"),
-		postgres.WithUsername("user"),
-		postgres.WithPassword("password"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(10*time.Second),
-		),
-	)
+	// Postgres ---------------------------------------------------------------
+	pgContainer, pgDown := startPostgres(t)
+	defer pgDown()
+
+	connStr, err := pgContainer.ConnectionString(t.Context(), "sslmode=disable")
 	require.NoError(t, err)
+	env.Set("POSTGRES_PORT", extractPort(connStr))
 
-	t.Cleanup(func() {
-		if err := postgresContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate container: %s", err)
-		}
-	})
+	{{- range $infra := .UseInfra }}
+	{{- if eq $infra "redis" }}
+	// Redis ------------------------------------------------------------------
+	redisC, redisDown := startRedis(t)
+	defer redisDown()
 
-	connStr, err := postgresContainer.ConnectionString(t.Context(), "sslmode=disable")
+	redisPort, err := redisC.MappedPort(t.Context(), "6379")
 	require.NoError(t, err)
-
-	pgPort := extractPort(connStr)
-	env.Set("POSTGRES_PORT", pgPort)
-
-{{- range $infra := .UseInfra }}
-{{- if eq $infra "redis" }}
-	// Initialize Redis container
-	redisContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "redis:7-alpine",
-			ExposedPorts: []string{"6379/tcp"},
-			Env: map[string]string{
-				"REDIS_PASSWORD": "password",
-			},
-			WaitingFor: wait.ForLog("Ready to accept connections"),
-		},
-		Started: true,
-	})
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := redisContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate redis container: %s", err)
-		}
-	})
-
-	redisPort, err := redisContainer.MappedPort(t.Context(), "6379")
-	require.NoError(t, err)
-
 	env.Set("REDIS_PORT", redisPort.Port())
-{{ end }}
-{{- if eq $infra "kafka" }}
-	// Initialize Kafka container
-	kafkaContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "bitnami/kafka:3.5",
-			ExposedPorts: []string{"9092/tcp"},
-			Env: map[string]string{
-				"KAFKA_CFG_NODE_ID": "0",
-				"KAFKA_CFG_PROCESS_ROLES": "controller,broker",
-				"KAFKA_CFG_LISTENERS": "PLAINTEXT://:9092,CONTROLLER://:9093",
-				"KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP": "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
-				"KAFKA_CFG_CONTROLLER_QUORUM_VOTERS": "0@kafka:9093",
-				"KAFKA_CFG_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
-				"ALLOW_PLAINTEXT_LISTENER": "yes",
-			},
-			WaitingFor: wait.ForLog("Kafka Server started"),
-		},
-		Started: true,
-	})
+	{{- end }}
+
+	{{- if eq $infra "kafka" }}
+	// Kafka ------------------------------------------------------------------
+	kafkaC, kafkaDown := startKafka(t)
+	defer kafkaDown()
+
+	kafkaPort, err := kafkaC.MappedPort(t.Context(), "9092")
 	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := kafkaContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate kafka container: %s", err)
-		}
-	})
-
-	kafkaPort, err := kafkaContainer.MappedPort(t.Context(), "9092")
-	require.NoError(t, err)
-
 	env.Set("KAFKA_PORT", kafkaPort.Port())
 	env.Set("KAFKA_BROKERS", fmt.Sprintf("localhost:%s", kafkaPort.Port()))
-{{- end }}
-{{- if eq $infra "etcd" }}
-	// Initialize Etcd container
-	etcdContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "bitnami/etcd:latest",
-			ExposedPorts: []string{"2379/tcp"},
-			Env: map[string]string{
-				"ALLOW_NONE_AUTHENTICATION": "yes",
-				"ETCD_ADVERTISE_CLIENT_URLS": "http://0.0.0.0:2379",
-			},
-			WaitingFor: wait.ForLog("ready to serve client requests"),
-		},
-		Started: true,
-	})
+	{{- end }}
+
+	{{- if eq $infra "etcd" }}
+	// Etcd -------------------------------------------------------------------
+	etcdC, etcdDown := startEtcd(t)
+	defer etcdDown()
+
+	etcdPort, err := etcdC.MappedPort(t.Context(), "2379")
 	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := etcdContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate etcd container: %s", err)
-		}
-	})
-
-	etcdPort, err := etcdContainer.MappedPort(t.Context(), "2379")
-	require.NoError(t, err)
-
 	env.Set("ETCD_ENDPOINTS", fmt.Sprintf("localhost:%s", etcdPort.Port()))
-{{- end }}
-{{- if eq $infra "nats" }}
-	// Initialize NATS container
-	natsContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "nats:latest",
-			ExposedPorts: []string{"4222/tcp"},
-			Cmd: []string{"--jetstream"},
-			WaitingFor: wait.ForLog("Server is ready"),
-		},
-		Started: true,
-	})
+	{{- end }}
+
+	{{- if eq $infra "nats" }}
+	// NATS -------------------------------------------------------------------
+	natsC, natsDown := startNats(t)
+	defer natsDown()
+
+	natsPort, err := natsC.MappedPort(t.Context(), "4222")
 	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := natsContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate nats container: %s", err)
-		}
-	})
-
-	natsPort, err := natsContainer.MappedPort(t.Context(), "4222")
-	require.NoError(t, err)
-
 	env.Set("NATS_URL", fmt.Sprintf("nats://localhost:%s", natsPort.Port()))
-{{- end }}
-{{- if eq $infra "rabbitmq" }}
-	// Initialize RabbitMQ container
-	rabbitmqContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "rabbitmq:3-management",
-			ExposedPorts: []string{"5672/tcp"},
-			Env: map[string]string{
-				"RABBITMQ_DEFAULT_USER": "guest",
-				"RABBITMQ_DEFAULT_PASS": "guest",
-			},
-			WaitingFor: wait.ForLog("Server startup complete"),
-		},
-		Started: true,
-	})
+	{{- end }}
+
+	{{- if eq $infra "rabbitmq" }}
+	// RabbitMQ ---------------------------------------------------------------
+	rmqC, rmqDown := startRabbitMQ(t)
+	defer rmqDown()
+
+	rmqPort, err := rmqC.MappedPort(t.Context(), "5672")
 	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := rabbitmqContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate rabbitmq container: %s", err)
-		}
-	})
-
-	rabbitmqPort, err := rabbitmqContainer.MappedPort(t.Context(), "5672")
-	require.NoError(t, err)
-
-	env.Set("RABBITMQ_PORT", rabbitmqPort.Port())
+	env.Set("RABBITMQ_PORT", rmqPort.Port())
 	env.Set("RABBITMQ_HOST", "localhost")
-{{- end }}
-{{- if eq $infra "elasticsearch" }}
-	// Initialize Elasticsearch container
-	elasticsearchContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "docker.elastic.co/elasticsearch/elasticsearch:8.6.0",
-			ExposedPorts: []string{"9200/tcp"},
-			Env: map[string]string{
-				"discovery.type": "single-node",
-				"xpack.security.enabled": "false",
-				"ES_JAVA_OPTS": "-Xms512m -Xmx512m",
-			},
-			WaitingFor: wait.ForLog("started").WithStartupTimeout(60*time.Second),
-		},
-		Started: true,
-	})
+	{{- end }}
+
+	{{- if eq $infra "elasticsearch" }}
+	// Elasticsearch ----------------------------------------------------------
+	esC, esDown := startElasticsearch(t)
+	defer esDown()
+
+	esPort, err := esC.MappedPort(t.Context(), "9200")
 	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := elasticsearchContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate elasticsearch container: %s", err)
-		}
-	})
-
-	elasticsearchPort, err := elasticsearchContainer.MappedPort(t.Context(), "9200")
-	require.NoError(t, err)
-
-	env.Set("ELASTICSEARCH_URL", fmt.Sprintf("http://localhost:%s", elasticsearchPort.Port()))
-{{- end }}
-{{- if eq $infra "memcache" }}
-	// Initialize Memcache container
-	memcacheContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "memcached:alpine",
-			ExposedPorts: []string{"11211/tcp"},
-			Cmd: []string{"memcached", "-m", "64"},
-			WaitingFor: wait.ForListeningPort("11211/tcp").WithStartupTimeout(10*time.Second),
-		},
-		Started: true,
-	})
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := memcacheContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate memcache container: %s", err)
-		}
-	})
-
-	memcachePort, err := memcacheContainer.MappedPort(t.Context(), "11211")
-	require.NoError(t, err)
-
-	env.Set("MEMCACHE_PORT", memcachePort.Port())
-	env.Set("MEMCACHE_HOST", "localhost")
-{{- end }}
-{{- if eq $infra "aerospike" }}
-	// Initialize Aerospike container
-	aerospikeContainer, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "aerospike/aerospike-server:latest",
-			ExposedPorts: []string{"3000/tcp"},
-			Env: map[string]string{
-				"NAMESPACE": "test",
-			},
-			WaitingFor: wait.ForListeningPort("3000/tcp").WithStartupTimeout(30*time.Second),
-		},
-		Started: true,
-	})
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		if err := aerospikeContainer.Terminate(context.Background()); err != nil {
-			t.Fatalf("failed to terminate aerospike container: %s", err)
-		}
-	})
-
-	aerospikePort, err := aerospikeContainer.MappedPort(t.Context(), "3000")
-	require.NoError(t, err)
-
-	env.Set("AEROSPIKE_PORT", aerospikePort.Port())
-	env.Set("AEROSPIKE_HOST", "localhost")
-	env.Set("AEROSPIKE_NAMESPACE", "test")
-{{- end }}
-{{ end }}
-	env.SetUp()
-	defer env.CleanUp()
+	env.Set("ELASTICSEARCH_URL", fmt.Sprintf("http://localhost:%s", esPort.Port()))
+	{{- end }}
+	{{- end }}
 
 	cfg, err := config.New("")
 	if err != nil {
@@ -310,19 +133,207 @@ func Run(t *testing.T, testCfg *Config) {
 	testy.Run(t, &testyCfg)
 }
 
-func extractPort(pgConnStr string) string {
-	const defaultPort = "5432"
+// Postgres -----------------------------------------------------------------
+func startPostgres(t *testing.T) (*postgres.PostgresContainer, func()) {
+	t.Helper()
 
-	if pgConnStr == "" {
-		return defaultPort
-	}
+	container, err := postgres.Run(t.Context(),
+		"postgres:16",
+		postgres.WithDatabase("test_db"),
+		postgres.WithUsername("user"),
+		postgres.WithPassword("password"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(10*time.Second),
+		),
+	)
+	require.NoError(t, err)
 
-	if u, err := url.Parse(pgConnStr); err == nil && u.Host != "" {
-		if _, port, err := net.SplitHostPort(u.Host); err == nil && port != "" {
-			return port
+	return container, func() {
+		if err := container.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate postgres: %v", err)
 		}
 	}
+}
 
-	return defaultPort
+{{- range $infra := .UseInfra }}
+{{- if eq $infra "redis" }}
+// Redis --------------------------------------------------------------------
+func startRedis(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "redis:7-alpine",
+			ExposedPorts: []string{"6379/tcp"},
+			Env: map[string]string{
+				"REDIS_PASSWORD": "password",
+			},
+			WaitingFor: wait.ForLog("Ready to accept connections"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate redis: %v", err)
+		}
+	}
+}
+{{- end }}
+
+{{- if eq $infra "kafka" }}
+// Kafka --------------------------------------------------------------------
+func startKafka(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "bitnami/kafka:3.5",
+			ExposedPorts: []string{"9092/tcp"},
+			Env: map[string]string{
+				"KAFKA_CFG_NODE_ID":                     "0",
+				"KAFKA_CFG_PROCESS_ROLES":               "controller,broker",
+				"KAFKA_CFG_LISTENERS":                   "PLAINTEXT://:9092,CONTROLLER://:9093",
+				"KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP": "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
+				"KAFKA_CFG_CONTROLLER_QUORUM_VOTERS":    "0@kafka:9093",
+				"KAFKA_CFG_CONTROLLER_LISTENER_NAMES":   "CONTROLLER",
+				"ALLOW_PLAINTEXT_LISTENER":              "yes",
+			},
+			WaitingFor: wait.ForLog("Kafka Server started"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate kafka: %v", err)
+		}
+	}
+}
+{{- end }}
+
+{{- if eq $infra "etcd" }}
+// Etcd ---------------------------------------------------------------------
+func startEtcd(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "bitnami/etcd:latest",
+			ExposedPorts: []string{"2379/tcp"},
+			Env: map[string]string{
+				"ALLOW_NONE_AUTHENTICATION": "yes",
+				"ETCD_ADVERTISE_CLIENT_URLS": "http://0.0.0.0:2379",
+			},
+			WaitingFor: wait.ForLog("ready to serve client requests"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate etcd: %v", err)
+		}
+	}
+}
+{{- end }}
+
+{{- if eq $infra "nats" }}
+// NATS ---------------------------------------------------------------------
+func startNats(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "nats:latest",
+			ExposedPorts: []string{"4222/tcp"},
+			Cmd:          []string{"--jetstream"},
+			WaitingFor:   wait.ForLog("Server is ready"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate nats: %v", err)
+		}
+	}
+}
+{{- end }}
+
+{{- if eq $infra "rabbitmq" }}
+// RabbitMQ -----------------------------------------------------------------
+func startRabbitMQ(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "rabbitmq:3-management",
+			ExposedPorts: []string{"5672/tcp"},
+			Env: map[string]string{
+				"RABBITMQ_DEFAULT_USER": "guest",
+				"RABBITMQ_DEFAULT_PASS": "guest",
+			},
+			WaitingFor: wait.ForLog("Server startup complete"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate rabbitmq: %v", err)
+		}
+	}
+}
+{{- end }}
+
+{{- if eq $infra "elasticsearch" }}
+// Elasticsearch ------------------------------------------------------------
+func startElasticsearch(t *testing.T) (testcontainers.Container, func()) {
+	t.Helper()
+
+	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "docker.elastic.co/elasticsearch/elasticsearch:8.6.0",
+			ExposedPorts: []string{"9200/tcp"},
+			Env: map[string]string{
+				"discovery.type":          "single-node",
+				"xpack.security.enabled":  "false",
+			},
+			WaitingFor: wait.ForLog("started"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+
+	return c, func() {
+		if err := c.Terminate(context.Background()); err != nil {
+			t.Fatalf("terminate elasticsearch: %v", err)
+		}
+	}
+}
+{{- end }}
+{{- end }}
+
+// extractPort парсит строку подключения и возвращает порт Postgres.
+func extractPort(connStr string) string {
+	u, err := url.Parse(connStr)
+	if err != nil {
+		return ""
+	}
+
+	host, port, _ := net.SplitHostPort(u.Host)
+	if host == "" {
+		return ""
+	}
+
+	return port
 }
 {{ end }}
