@@ -32,8 +32,7 @@ func NewElasticsearchProcessor() Processor {
 	return NewDefaultProcessor(tmplElasticsearch,
 		// Define imports
 		WithImport(func(*config.ProjectConfig) string {
-			return `"github.com/elastic/go-elasticsearch/v8"
-	"net/http"`
+			return `"github.com/elastic/go-elasticsearch/v8"`
 		}),
 
 		// Define config struct

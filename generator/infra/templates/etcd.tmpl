@@ -1,0 +1,56 @@
+{{ define "config" }}
+type Etcd struct {
+	Endpoints []string `envconfig:"ENDPOINTS" required:"true"`
+	Username  string   `envconfig:"USERNAME" required:"false"`
+	Password  string   `envconfig:"PASSWORD" required:"false"`
+}
+{{ end }}
+
+{{ define "constructor" }}
+func newEtcdClient(ctx context.Context, cfg *config.Etcd) (*clientv3.Client, error) {
+	client, err := clientv3.New(clientv3.Config{
+		Endpoints:   cfg.Endpoints,
+		Username:    cfg.Username,
+		Password:    cfg.Password,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create etcd client: %w", err)
+	}
+
+	// Test connection
+	_, err = client.Get(ctx, "test_key")
+	if err != nil {
+		return nil, fmt.Errorf("test connection: %w", err)
+	}
+
+	return client, nil
+}
+{{ end }}
+
+{{ define "init_in_app_constructor" }}
+	etcdClient, err := newEtcdClient(ctx, &cfg.Etcd)
+	if err != nil {
+		return nil, fmt.Errorf("create etcd client: %w", err)
+	}
+{{ end }}
+
+{{ define "close" }}
+	if app.EtcdClient != nil {
+		_ = app.EtcdClient.Close()
+	}
+{{ end }}
+
+{{ define "docker_compose" }}
+  {{ .ProjectName }}-etcd:
+    image: 'bitnami/etcd:latest'
+    container_name: {{ .ProjectName }}-etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://{{ .ProjectName }}-etcd:2379
+    volumes:
+      - "etcd_{{ .ProjectName }}:/bitnami/etcd"
+    ports:
+      - '2379:2379'
+      - '2380:2380'
+{{ end }}
