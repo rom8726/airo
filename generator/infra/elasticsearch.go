@@ -2,9 +2,19 @@ package infra
 
 import (
 	_ "embed"
+	"fmt"
 
 	"github.com/rom8726/airo/config"
 )
+
+const elasticsearchEnvFormat = `
+# Elasticsearch
+ELASTICSEARCH_URL=http://%s:9200
+ELASTICSEARCH_USERNAME=elastic
+ELASTICSEARCH_PASSWORD=changeme`
+
+//go:embed templates/elasticsearch.tmpl
+var tmplElasticsearch string
 
 // WithElasticsearch returns a registry option that adds Elasticsearch support
 func WithElasticsearch() RegistryOption {
@@ -19,12 +29,15 @@ func WithElasticsearch() RegistryOption {
 // NewElasticsearchProcessor creates a new processor for Elasticsearch
 func NewElasticsearchProcessor() Processor {
 	// Create a DefaultProcessor with custom options
-	return NewDefaultProcessor("",
+	return NewDefaultProcessor(tmplElasticsearch,
 		// Define imports
-		WithImport(func(*config.ProjectConfig) string { return `"github.com/elastic/go-elasticsearch/v8"` }),
+		WithImport(func(*config.ProjectConfig) string {
+			return `"github.com/elastic/go-elasticsearch/v8"
+	"net/http"`
+		}),
 
 		// Define config struct
-		WithConfigField("Elasticsearch ElasticsearchConfig `envconfig:\"ELASTICSEARCH\"`"),
+		WithConfigField("Elasticsearch Elasticsearch `envconfig:\"ELASTICSEARCH\"`"),
 
 		// Define config field name
 		WithConfigFieldName("Elasticsearch"),
@@ -37,32 +50,11 @@ func NewElasticsearchProcessor() Processor {
 
 		// Define environment variables for docker-compose
 		WithComposeEnv(func(cfg *config.ProjectConfig) string {
-			return `
-# Elasticsearch
-ELASTICSEARCH_URL=http://elasticsearch:9200
-ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_PASSWORD=changeme`
+			return fmt.Sprintf(elasticsearchEnvFormat, cfg.ProjectName+"-elasticsearch")
 		}),
 
 		// Define environment variables for local config
-		WithConfigEnv(`
-# Elasticsearch
-ELASTICSEARCH_URL=http://localhost:9200
-ELASTICSEARCH_USERNAME=elastic
-ELASTICSEARCH_PASSWORD=changeme`),
-
-		// Define docker-compose service
-		WithComposeEnv(func(cfg *config.ProjectConfig) string {
-			return `elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data`
-		}),
+		WithConfigEnv(func() string { return fmt.Sprintf(elasticsearchEnvFormat, "localhost") }()),
 	)
 }
 

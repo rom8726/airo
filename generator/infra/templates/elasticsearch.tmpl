@@ -1,14 +1,64 @@
 {{ define "config" }}
+type Elasticsearch struct {
+	URL      string        `envconfig:"URL" required:"true"`
+	Username string        `envconfig:"USERNAME"`
+	Password string        `envconfig:"PASSWORD"`
+	Timeout  time.Duration `envconfig:"TIMEOUT" default:"10s"`
+}
 {{ end }}
 
 {{ define "constructor" }}
+func newElasticsearchClient(ctx context.Context, cfg *config.Elasticsearch) (*elasticsearch.Client, error) {
+	esConfig := elasticsearch.Config{
+		Addresses: []string{cfg.URL},
+		Username:  cfg.Username,
+		Password:  cfg.Password,
+		Transport: &http.Transport{
+			ResponseHeaderTimeout: cfg.Timeout,
+		},
+	}
+
+	client, err := elasticsearch.NewClient(esConfig)
+	if err != nil {
+		return nil, fmt.Errorf("create elasticsearch client: %w", err)
+	}
+
+	// Check connection
+	res, err := client.Info()
+	if err != nil {
+		return nil, fmt.Errorf("elasticsearch info: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, fmt.Errorf("elasticsearch error: %s", res.String())
+	}
+
+	return client, nil
+}
 {{ end }}
 
 {{ define "init_in_app_constructor" }}
+	esClient, err := newElasticsearchClient(ctx, &cfg.Elasticsearch)
+	if err != nil {
+		return nil, fmt.Errorf("create elasticsearch client: %w", err)
+	}
 {{ end }}
 
 {{ define "close" }}
+	// Elasticsearch client doesn't have a Close method
+	// It uses the standard http.Client which doesn't need explicit closing
 {{ end }}
 
 {{ define "docker_compose" }}
+  {{ .ProjectName }}-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+    container_name: {{ .ProjectName }}-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - "elasticsearch_{{ .ProjectName }}:/usr/share/elasticsearch/data"
 {{ end }}
