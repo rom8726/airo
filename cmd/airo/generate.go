@@ -12,8 +12,13 @@ import (
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/generator"
 	"github.com/rom8726/airo/generator/infra"
+	"github.com/rom8726/airo/plugin"
 	"github.com/rom8726/airo/tui"
 	"github.com/rom8726/airo/validate"
+)
+
+var (
+	pluginsDir string
 )
 
 var generateCmd = &cobra.Command{
@@ -24,7 +29,12 @@ var generateCmd = &cobra.Command{
 	},
 }
 
+func init() {
+	generateCmd.Flags().StringVar(&pluginsDir, "plugins-dir", "", "Directory containing plugins")
+}
+
 func runGenerateCmd(ctx context.Context) error {
+	// Initialize the registry with built-in components
 	registry := infra.NewRegistry(
 		// DBs
 		infra.WithPostgres(),
@@ -40,6 +50,28 @@ func runGenerateCmd(ctx context.Context) error {
 		infra.WithRabbitMQ(),
 		infra.WithAerospike(),
 	)
+
+	// Initialize plugin manager if plugins directory is specified
+	var pluginManager *plugin.Manager
+	var pluginStepProviders []generator.StepProvider
+
+	if pluginsDir != "" {
+		fmt.Printf("Loading plugins from %s...\n", pluginsDir)
+		pluginManager = plugin.NewManager(pluginsDir)
+		if err := pluginManager.Initialize(ctx); err != nil {
+			return fmt.Errorf("failed to initialize plugin manager: %w", err)
+		}
+
+		// Register plugin components with the registry
+		pluginManager.RegisterWithRegistry(registry)
+
+		// Get step providers from plugins
+		pluginStepProviders = pluginManager.GetStepProviders()
+
+		fmt.Printf("Loaded %d plugins with %d components\n", 
+			len(pluginManager.GetPlugins()), 
+			len(pluginManager.GetComponents()))
+	}
 
 	var projectConfig config.ProjectConfig
 	p := tea.NewProgram(tui.InitialModel(&projectConfig, registry))
@@ -57,7 +89,15 @@ func runGenerateCmd(ctx context.Context) error {
 
 	registry.UpdateConfig(&projectConfig)
 
+	// Create generator with built-in steps
 	gen := generator.New(registry)
+
+	// Add plugin steps if available
+	if len(pluginStepProviders) > 0 {
+		for _, provider := range pluginStepProviders {
+			gen.AddStep(provider)
+		}
+	}
 
 	return gen.GenerateProject(ctx, &projectConfig)
 }
