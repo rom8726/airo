@@ -102,6 +102,10 @@ func Run(t *testing.T, testCfg *Config) {
 	{{- end }}
 	{{- end }}
 
+	// Config and App initialization ------------------------------------------
+	env.SetUp()
+    defer env.CleanUp()
+
 	cfg, err := config.New("")
 	if err != nil {
 		t.Fatal(err)
