@@ -15,6 +15,7 @@ type renderData struct {
 type BaseProcessor struct {
 	cfg        *config.ProjectConfig
 	renderData renderData
+	tmpl       string
 }
 
 func (b *BaseProcessor) SetConfig(cfg *config.ProjectConfig) {
@@ -25,24 +26,24 @@ func (b *BaseProcessor) SetConfig(cfg *config.ProjectConfig) {
 	}
 }
 
-func (b *BaseProcessor) config(tmpl string) string {
-	return b.mustRender("config", tmpl, b.renderData)
+func (b *BaseProcessor) config() string {
+	return b.mustRender("config", b.tmpl, b.renderData)
 }
 
-func (b *BaseProcessor) constructor(tmpl string) string {
-	return b.mustRender("constructor", tmpl, b.renderData)
+func (b *BaseProcessor) constructor() string {
+	return b.mustRender("constructor", b.tmpl, b.renderData)
 }
 
-func (b *BaseProcessor) initInAppConstructor(tmpl string) string {
-	return b.mustRender("init_in_app_constructor", tmpl, b.renderData)
+func (b *BaseProcessor) initInAppConstructor() string {
+	return b.mustRender("init_in_app_constructor", b.tmpl, b.renderData)
 }
 
-func (b *BaseProcessor) close(tmpl string) string {
-	return b.mustRender("close", tmpl, b.renderData)
+func (b *BaseProcessor) close() string {
+	return b.mustRender("close", b.tmpl, b.renderData)
 }
 
-func (b *BaseProcessor) dockerCompose(tmpl string) string {
-	return b.mustRender("docker_compose", tmpl, b.renderData)
+func (b *BaseProcessor) dockerCompose() string {
+	return b.mustRender("docker_compose", b.tmpl, b.renderData)
 }
 
 func (b *BaseProcessor) mustRender(name, template string, data any) string {

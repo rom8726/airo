@@ -33,6 +33,7 @@ func runGenerateCmd(ctx context.Context) error {
 		// Infra
 		infra.WithRedis(),
 		infra.WithKafka(),
+		infra.WithElasticsearch(),
 	)
 
 	var projectConfig config.ProjectConfig
