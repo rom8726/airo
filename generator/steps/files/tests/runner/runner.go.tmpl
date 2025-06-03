@@ -373,7 +373,6 @@ func startElasticsearch(t *testing.T) (testcontainers.Container, func()) {
 {{- end }}
 {{- end }}
 
-// extractPort парсит строку подключения и возвращает порт базы данных.
 func extractPort(connStr string) string {
 	// Check if it's a MySQL connection string (user:password@tcp(host:port)/dbname)
 	if strings.Contains(connStr, "@tcp(") {
