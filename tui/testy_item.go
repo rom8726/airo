@@ -17,6 +17,6 @@ func (t testyItem) Title() string {
 }
 
 func (t testyItem) Description() string {
-	return "Includes test containers and utilities for integration testing"
+	return "Integration testing framework"
 }
 func (t testyItem) FilterValue() string { return t.title }

@@ -27,49 +27,35 @@ func (i fileItem) FilterValue() string {
 // Title returns the name of the file or directory
 func (i fileItem) Title() string {
 	if i.name == ".." {
-		return fmt.Sprintf("📂 %s (Parent Directory)", i.name)
+		return "../ (Parent Directory)"
 	} else if i.isDir {
-		return fmt.Sprintf("📁 %s/", i.name)
+		return i.name + "/"
 	}
 
-	// Add special icons for different file types
+	// Add simple indicators for YAML files
 	ext := filepath.Ext(i.name)
-	switch ext {
-	case ".yml", ".yaml":
-		return fmt.Sprintf("📋 %s", i.name)
-	case ".json":
-		return fmt.Sprintf("🔍 %s", i.name)
-	case ".go":
-		return fmt.Sprintf("🔷 %s", i.name)
-	case ".md":
-		return fmt.Sprintf("📝 %s", i.name)
-	default:
-		return fmt.Sprintf("📄 %s", i.name)
+	if ext == ".yml" || ext == ".yaml" {
+		return i.name + " (YAML)"
 	}
+
+	return i.name
 }
 
 // Description returns additional information about the file
 func (i fileItem) Description() string {
 	if i.name == ".." {
-		return "Navigate up one level"
+		return "Go up one level"
 	} else if i.isDir {
-		return "Directory - Press Enter to browse"
+		return "Directory"
 	}
 
-	// Add descriptions for different file types
+	// Only add special description for YAML files
 	ext := filepath.Ext(i.name)
-	switch ext {
-	case ".yml", ".yaml":
-		return "YAML file - Suitable for OpenAPI specifications"
-	case ".json":
-		return "JSON file - Data interchange format"
-	case ".go":
-		return "Go source code file"
-	case ".md":
-		return "Markdown documentation file"
-	default:
-		return "File - Press Enter to select"
+	if ext == ".yml" || ext == ".yaml" {
+		return "OpenAPI specification file"
 	}
+
+	return ""
 }
 
 // FileBrowser is a component for browsing and selecting files
@@ -110,7 +96,7 @@ func NewFileBrowser(startPath string, width, height int) (*FileBrowser, error) {
 
 	// Create the list model
 	fb.list = list.New(items, list.NewDefaultDelegate(), width, height)
-	fb.list.Title = "📂 File Browser - Select an OpenAPI Specification File"
+	fb.list.Title = "File Browser"
 	fb.list.SetShowStatusBar(false)
 	fb.list.SetFilteringEnabled(false)
 	fb.list.SetShowHelp(true)
@@ -222,11 +208,11 @@ func (fb *FileBrowser) Update(msg tea.Msg) (*FileBrowser, tea.Cmd) {
 // View renders the file browser
 func (fb *FileBrowser) View() string {
 	if fb.err != nil {
-		return fmt.Sprintf("❌ Error: %s", fb.err)
+		return fmt.Sprintf("Error: %s", fb.err)
 	}
 
-	// Show the current path and the list with improved formatting
-	return fmt.Sprintf("📂 Current directory: %s\n\n💡 Tip: Navigate to your OpenAPI specification file (.yml or .yaml)\n\n%s",
+	// Show the current path and the list with simplified formatting
+	return fmt.Sprintf("Current directory: %s\n\n%s",
 		fb.currentPath,
 		fb.list.View())
 }

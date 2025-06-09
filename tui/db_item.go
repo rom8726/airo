@@ -20,11 +20,11 @@ func (d dbItem) Title() string {
 func (d dbItem) Description() string {
 	switch d.code {
 	case "postgres":
-		return "PostgreSQL database for robust relational data storage"
+		return "PostgreSQL - SQL database"
 	case "mysql":
-		return "MySQL database for web applications"
+		return "MySQL - SQL database"
 	case "mongodb":
-		return "MongoDB for document-oriented NoSQL storage"
+		return "MongoDB - NoSQL database"
 	default:
 		return "Database option"
 	}

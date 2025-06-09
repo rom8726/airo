@@ -46,7 +46,7 @@ type Model struct {
 
 func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *Model {
 	ti := textinput.New()
-	ti.Placeholder = "Enter a name (letters, numbers, hyphens, underscores)"
+	ti.Placeholder = "Enter name"
 	ti.Focus()
 	ti.CharLimit = 64
 	ti.Width = windowWidth
@@ -71,7 +71,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	}
 
 	dbList := list.New(dbItems, list.NewDefaultDelegate(), 0, 0)
-	dbList.Title = "Choose a database for your project (use [space] to select)"
+	dbList.Title = "Select a database ([space] to select)"
 	dbList.SetShowStatusBar(false)
 	dbList.SetFilteringEnabled(false)
 	dbList.SetShowHelp(true)
@@ -89,7 +89,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	}
 
 	infraList := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	infraList.Title = "Choose infrastructure components (use [space] to toggle selection)"
+	infraList.Title = "Select infrastructure components ([space] to toggle)"
 	infraList.SetShowStatusBar(false)
 	infraList.SetFilteringEnabled(false)
 	infraList.SetShowHelp(true)
@@ -105,7 +105,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	}
 
 	testyList := list.New(testyItems, list.NewDefaultDelegate(), 0, 0)
-	testyList.Title = "Testing framework options (use [space] to toggle selection)"
+	testyList.Title = "Testing options ([space] to toggle)"
 	testyList.SetShowStatusBar(false)
 	testyList.SetFilteringEnabled(false)
 	testyList.SetShowHelp(true)

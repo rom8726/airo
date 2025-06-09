@@ -20,13 +20,27 @@ func (i infraItem) Title() string {
 func (i infraItem) Description() string {
 	switch i.code {
 	case "kafka":
-		return "Apache Kafka for event streaming and message queuing"
+		return "Message broker"
 	case "redis":
-		return "Redis for in-memory caching and data structure store"
+		return "In-memory cache"
 	case "aerospike":
-		return "Aerospike for high-performance NoSQL database"
+		return "NoSQL database"
 	case "elasticsearch":
-		return "Elasticsearch for full-text search and analytics"
+		return "Search engine"
+	case "nats":
+		return "Message broker"
+	case "rabbitmq":
+		return "Message broker"
+	case "memcache":
+		return "In-memory cache"
+	case "etcd":
+		return "Key-value store"
+	case "mongo":
+		return "NoSQL database"
+	case "mysql":
+		return "SQL database"
+	case "postgres":
+		return "SQL database"
 	default:
 		return "Infrastructure component"
 	}
