@@ -73,7 +73,7 @@ func Run(t *testing.T, testCfg *Config) {
 	zkC, zkDown := startZookeeper(t)
     defer zkDown()
 
-	kafkaC, kafkaDown := startKafka(t)
+	kafkaC, kafkaDown := startKafka(t, zkC)
 	defer kafkaDown()
 
 	kafkaPort, err := kafkaC.MappedPort(t.Context(), "9092")
