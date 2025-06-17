@@ -245,7 +245,7 @@ func startZookeeper(t *testing.T) (testcontainers.Container, func()) {
 
 	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "bitnami/zookeeper:3.9",
+			Image:        "bitnami/zookeeper:3.9.3",
 			ExposedPorts: []string{"2181/tcp"},
 			Env: map[string]string{
 				"ALLOW_ANONYMOUS_LOGIN": "yes",
@@ -267,17 +267,14 @@ func startZookeeper(t *testing.T) (testcontainers.Container, func()) {
 func startKafka(t *testing.T, zk testcontainers.Container) (testcontainers.Container, func()) {
 	t.Helper()
 
-	zkHost, err := zk.Host(t.Context())
+	zkIP, err := zk.ContainerIP(t.Context())
 	require.NoError(t, err)
 
-	zkPort, err := zk.MappedPort(t.Context(), "2181")
-	require.NoError(t, err)
-
-	zookeeperConnect := fmt.Sprintf("%s:%s", zkHost, zkPort.Port())
+	zookeeperConnect := fmt.Sprintf("%s:2181", zkIP)
 
 	c, err := testcontainers.GenericContainer(t.Context(), testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "bitnami/kafka:3.5",
+			Image:        "bitnami/kafka:3.6.0",
 			ExposedPorts: []string{"9092/tcp"},
 			Env: map[string]string{
 				"KAFKA_BROKER_ID":                     "1",
@@ -287,8 +284,8 @@ func startKafka(t *testing.T, zk testcontainers.Container) (testcontainers.Conta
 				"KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE": "true",
 				"ALLOW_PLAINTEXT_LISTENER":            "yes",
 			},
-			WaitingFor: wait.ForLog("Kafka Server started")
-				.WithStartupTimeout(60 * time.Second),
+			WaitingFor: wait.ForLog("[KafkaServer id=1] started (kafka.server.KafkaServer)").
+				WithStartupTimeout(3 * time.Minute),
 		},
 		Started: true,
 	})
