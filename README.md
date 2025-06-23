@@ -1,5 +1,9 @@
 # airo
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/rom8726/airo.svg)](https://pkg.go.dev/github.com/rom8726/airo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rom8726/airo)](https://goreportcard.com/report/github.com/rom8726/airo)
+
+
 Spec-first Golang project scaffold generator
 
 ## Key features
