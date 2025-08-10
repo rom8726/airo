@@ -41,6 +41,10 @@ type Model struct {
 	infra       []infraItem
 	openapiPath string
 
+	// OpenAPI decision state
+	openapiDecisionMade bool
+	openapiUseEmbedded  bool
+
 	projectConfig *config.ProjectConfig
 }
 

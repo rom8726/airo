@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rom8726/airo/assets"
 	"github.com/rom8726/airo/config"
 )
 
@@ -20,12 +21,17 @@ func (SpecsStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 		return fmt.Errorf("mkdir failed: %w", err)
 	}
 
-	src := cfg.OpenAPIPath
 	target := serverSpecPath(cfg)
 
-	content, err := os.ReadFile(src)
-	if err != nil {
-		return fmt.Errorf("failed to read source file: %w", err)
+	var content []byte
+	if cfg.OpenAPIPath == assets.EmbeddedOpenAPIPath {
+		content = assets.ExampleServerYAML
+	} else {
+		var err error
+		content, err = os.ReadFile(cfg.OpenAPIPath)
+		if err != nil {
+			return fmt.Errorf("failed to read source file: %w", err)
+		}
 	}
 
 	if err := os.WriteFile(target, content, 0644); err != nil {

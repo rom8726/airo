@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
+	"github.com/rom8726/airo/assets"
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/generator"
 	"github.com/rom8726/airo/generator/infra"
@@ -81,8 +82,10 @@ func validateProjectConfig(projectConfig *config.ProjectConfig) error {
 		return fmt.Errorf("project directory %q already exists", dir)
 	}
 
-	if _, err := os.Stat(projectConfig.OpenAPIPath); os.IsNotExist(err) {
-		return err
+	if projectConfig.OpenAPIPath != assets.EmbeddedOpenAPIPath {
+		if _, err := os.Stat(projectConfig.OpenAPIPath); os.IsNotExist(err) {
+			return err
+		}
 	}
 
 	return nil

@@ -60,7 +60,13 @@ func (m *Model) View() string {
 			errDisplay,
 			navHelp)
 	case stepOpenAPIPath:
-		if m.fileBrowser != nil {
+		if !m.openapiDecisionMade {
+			// Decision prompt: have a spec?
+			return fmt.Sprintf("%s\nAPI Specification\n\nDo you already have an OpenAPI specification?\n\n[Y] Yes — choose a file\n[N] No — use the built-in ping-pong spec\n%s",
+				progressBar,
+				navHelp)
+		}
+		if m.fileBrowser != nil && !m.openapiUseEmbedded {
 			return fmt.Sprintf("%s\nAPI Specification\n\nSelect your OpenAPI specification file:\n\n%s%s%s",
 				progressBar,
 				m.fileBrowser.View(),
@@ -68,10 +74,15 @@ func (m *Model) View() string {
 				navHelp)
 		}
 		// Fallback to text input if file browser is not available
-		return fmt.Sprintf("%s\nAPI Specification\n\nEnter OpenAPI YAML path (e.g., example/server.yml):\n\n%s%s%s",
+		if !m.openapiUseEmbedded {
+			return fmt.Sprintf("%s\nAPI Specification\n\nEnter OpenAPI YAML path (e.g., example/server.yml):\n\n%s%s%s",
+				progressBar,
+				m.input.View(),
+				errDisplay,
+				navHelp)
+		}
+		return fmt.Sprintf("%s\nAPI Specification\n\nThe built-in ping-pong specification will be used.\n%s",
 			progressBar,
-			m.input.View(),
-			errDisplay,
 			navHelp)
 	case stepDBChoice:
 		return fmt.Sprintf("%s\nDatabase Selection\n\nSelect a database for your project:\n\n%s%s",

@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/rom8726/airo/assets"
 	"github.com/rom8726/airo/config"
 	"github.com/rom8726/airo/validate"
 )
@@ -22,7 +23,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stepProjectName, stepModuleName:
 		m.input, cmd = m.input.Update(msg)
 	case stepOpenAPIPath:
-		if m.fileBrowser != nil {
+		if !m.openapiDecisionMade {
+			// Waiting for user decision (Y/N), no nested updates
+		} else if m.openapiUseEmbedded {
+			// Using embedded spec, will proceed on key handling
+		} else if m.fileBrowser != nil {
 			var fbCmd tea.Cmd
 			m.fileBrowser, fbCmd = m.fileBrowser.Update(msg)
 			cmd = fbCmd
@@ -43,6 +48,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 	case tea.KeyMsg:
+		// Handle Y/N decision in OpenAPI step before processing other keys
+		if m.step == stepOpenAPIPath && !m.openapiDecisionMade {
+			s := msg.String()
+			if s == "y" || s == "Y" {
+				m.openapiDecisionMade = true
+				m.openapiUseEmbedded = false
+				return m, nil
+			}
+			if s == "n" || s == "N" {
+				m.openapiDecisionMade = true
+				m.openapiUseEmbedded = true
+				return m, nil
+			}
+		}
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			*m.projectConfig = config.ProjectConfig{Aborted: true}
@@ -57,12 +76,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.input.SetValue(m.project)
 					m.input.Placeholder = "project-name"
 				case stepOpenAPIPath:
-					m.step = stepModuleName
-					m.input.SetValue(m.module)
-					m.input.Placeholder = "module name (e.g. github.com/user/myproject)"
-					// Reset file browser selection if it exists
-					if m.fileBrowser != nil {
-						m.fileBrowser.SetSelectedFile("")
+					if m.openapiDecisionMade {
+						// Return to decision prompt within the step
+						m.openapiDecisionMade = false
+						m.openapiUseEmbedded = false
+						if m.fileBrowser != nil {
+							m.fileBrowser.SetSelectedFile("")
+						}
+					} else {
+						m.step = stepModuleName
+						m.input.SetValue(m.module)
+						m.input.Placeholder = "module name (e.g. github.com/user/myproject)"
+						// Reset file browser selection if it exists
+						if m.fileBrowser != nil {
+							m.fileBrowser.SetSelectedFile("")
+						}
 					}
 				case stepDBChoice:
 					m.step = stepOpenAPIPath
@@ -152,7 +180,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = stepDone
 
 			case stepOpenAPIPath:
-				if m.fileBrowser != nil && m.fileBrowser.SelectedFile() != "" {
+				if !m.openapiDecisionMade {
+					// Waiting for Y/N decision
+					return m, nil
+				}
+				if m.openapiUseEmbedded {
+					m.openapiPath = assets.EmbeddedOpenAPIPath
+					m.step = stepDBChoice
+				} else if m.fileBrowser != nil && m.fileBrowser.SelectedFile() != "" {
 					m.openapiPath = m.fileBrowser.SelectedFile()
 					m.step = stepDBChoice
 				} else {

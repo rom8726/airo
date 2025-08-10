@@ -1,0 +1,16 @@
+openapi: 3.1.0
+info:
+  title: Example API
+  version: 1.0.0
+paths:
+  /ping:
+    get:
+      summary: Ping-pong endpoint
+      operationId: ping
+      responses:
+        '200':
+          description: pong
+          content:
+            text/plain:
+              schema:
+                type: string
