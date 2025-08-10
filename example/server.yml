@@ -1,74 +1,16 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
-  title: Test service
-  description: API for test service
+  title: Example API
   version: 1.0.0
-servers:
-  - url: http://localhost:8080/
 paths:
-  /api/v1/test:
-    post:
-      summary: Test endpoint
-      description: Test endpoint
-      operationId: test
-      security:
-        - bearerAuth: [ ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TestRequest'
+  /ping:
+    get:
+      summary: Ping-pong endpoint
+      operationId: ping
       responses:
         '200':
-          description: Successfully processed.
+          description: pong
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/TestResponse'
-        '500':
-          description: Internal server error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-  schemas:
-    TestRequest:
-      type: object
-      required:
-        - field1
-        - field2
-      properties:
-        field1:
-          type: string
-          description: Field1.
-          example: field1
-          minLength: 1
-        field2:
-          type: string
-          description: Field2.
-          example: field2
-          minLength: 1
-
-    TestResponse:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: string
-          description: 'Response data.'
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-    ErrorResponse:
-      type: object
-      properties:
-        error_message:
-          type: string
-          description: Error message.
+                type: string

@@ -177,16 +177,16 @@ func (app *App) newTechServer() (*httpserver.Server, error) {
 	router.Handler(http.MethodGet, "/metrics", promhttp.Handler())
 
 	router.HandlerFunc(http.MethodGet, "/debug/pprof", pprof.Index)
-	router.HandlerFunc(http.MethodGet, "/debug/cmdline", pprof.Cmdline)
-	router.HandlerFunc(http.MethodGet, "/debug/profile", pprof.Profile)
-	router.HandlerFunc(http.MethodGet, "/debug/symbol", pprof.Symbol)
-	router.HandlerFunc(http.MethodGet, "/debug/trace", pprof.Trace)
-	router.Handler(http.MethodGet, "/debug/allocs", pprof.Handler("allocs"))
-	router.Handler(http.MethodGet, "/debug/block", pprof.Handler("block"))
-	router.Handler(http.MethodGet, "/debug/goroutine", pprof.Handler("goroutine"))
-	router.Handler(http.MethodGet, "/debug/heap", pprof.Handler("heap"))
-	router.Handler(http.MethodGet, "/debug/mutex", pprof.Handler("mutex"))
-	router.Handler(http.MethodGet, "/debug/threadcreate", pprof.Handler("threadcreate"))
+	router.HandlerFunc(http.MethodGet, "/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandlerFunc(http.MethodGet, "/debug/pprof/profile", pprof.Profile)
+	router.HandlerFunc(http.MethodGet, "/debug/pprof/symbol", pprof.Symbol)
+	router.HandlerFunc(http.MethodGet, "/debug/pprof/trace", pprof.Trace)
+	router.Handler(http.MethodGet, "/debug/pprof/allocs", pprof.Handler("allocs"))
+	router.Handler(http.MethodGet, "/debug/pprof/block", pprof.Handler("block"))
+	router.Handler(http.MethodGet, "/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	router.Handler(http.MethodGet, "/debug/pprof/heap", pprof.Handler("heap"))
+	router.Handler(http.MethodGet, "/debug/pprof/mutex", pprof.Handler("mutex"))
+	router.Handler(http.MethodGet, "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 
 	return &httpserver.Server{
 		Listener:     lis,
