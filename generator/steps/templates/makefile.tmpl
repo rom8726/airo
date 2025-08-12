@@ -87,5 +87,5 @@ format: ## Format go code
 generate-server: ## Generate server by OpenAPI specification
 	@docker run --rm \
       --volume ".:/workspace" \
-      ghcr.io/ogen-go/ogen:latest --target workspace/internal/generated/server --clean workspace/specs/server.yml
+      ghcr.io/ogen-go/ogen:latest --target /workspace/internal/generated/server --clean specs/server.yml
 {{ end }}

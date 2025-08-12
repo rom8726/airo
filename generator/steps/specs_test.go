@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/rom8726/airo/assets"
 	"github.com/rom8726/airo/config"
 
 	"github.com/stretchr/testify/require"
@@ -29,4 +30,21 @@ func TestSpecsStep_Do_MkdirError(t *testing.T) {
 	step := SpecsStep{}
 	err := step.Do(context.Background(), cfg)
 	require.Error(t, err)
+}
+
+func TestSpecsStep_Do_EmbeddedSpec(t *testing.T) {
+	dir := t.TempDir()
+	cfg := &config.ProjectConfig{ProjectName: dir, OpenAPIPath: assets.EmbeddedOpenAPIPath}
+	step := SpecsStep{}
+	err := step.Do(context.Background(), cfg)
+	require.NoError(t, err)
+
+	path := filepath.Join(dir, "specs", "server.yml")
+	_, err = os.Stat(path)
+	require.NoError(t, err)
+
+	// Проверяем, что содержимое файла соответствует встроенной спецификации
+	content, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, assets.ExampleServerYAML, content)
 }
