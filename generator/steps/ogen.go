@@ -18,23 +18,22 @@ func (OGenStep) Description() string {
 
 func (OGenStep) Do(ctx context.Context, cfg *config.ProjectConfig) error {
 	currDir := os.Getenv("PWD")
-	projectDir := filepath.Join(currDir, projectDir(cfg))
+	projDir := filepath.Join(currDir, projectDir(cfg))
 
 	outputDir := openapiDir(cfg)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("mkdir failed: %w", err)
 	}
 
-	// Используем абсолютный путь внутри контейнера
-	targetSpecPath := "/workspace/specs/server.yml"
-	targetOutputDir := filepath.Join("/workspace", openapiRelDir())
+	targetSpecPath := "workspace/specs/server.yml"
+	targetOutputDir := filepath.Join("workspace", openapiRelDir())
 
 	cmd := exec.CommandContext(
 		ctx,
 		"docker",
 		"run",
 		"--rm",
-		"-v", projectDir+":/workspace",
+		"-v", projDir+":/workspace",
 		ogenDockerImage,
 		"--target", targetOutputDir,
 		"--clean",

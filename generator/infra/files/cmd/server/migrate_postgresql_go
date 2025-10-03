@@ -27,6 +27,10 @@ func upMigrations(connStr, migrationsDir string) error {
 	}
 
 	pgMigrate, err := migrate.NewWithDatabaseInstance("file://"+migrationsDir, "postgres", driver)
+	if err != nil {
+		return fmt.Errorf("create migrate: %w", err)
+	}
+
 	if err := pgMigrate.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			slog.Info("up migrations: no changes")

@@ -43,7 +43,6 @@ func TestSpecsStep_Do_EmbeddedSpec(t *testing.T) {
 	_, err = os.Stat(path)
 	require.NoError(t, err)
 
-	// Проверяем, что содержимое файла соответствует встроенной спецификации
 	content, err := os.ReadFile(path)
 	require.NoError(t, err)
 	require.Equal(t, assets.ExampleServerYAML, content)
