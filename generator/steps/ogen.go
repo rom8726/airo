@@ -26,7 +26,7 @@ func (OGenStep) Do(ctx context.Context, cfg *config.ProjectConfig) error {
 	}
 
 	targetSpecPath := "workspace/specs/server.yml"
-	targetOutputDir := filepath.Join("workspace", openapiRelDir())
+	targetOutputDir := "workspace/" + openapiRelDir()
 
 	cmd := exec.CommandContext(
 		ctx,
