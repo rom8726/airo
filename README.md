@@ -8,6 +8,8 @@
 
 Spec-first Golang project scaffold generator
 
+<img src="./docs/logo.png" style="max-width: 500px" alt="Logo"/>
+
 ## Key features
 - **OpenAPI first** – start with a spec, everything else is generated around it.
 - **Code generation with [ogen-go/ogen]** – generation of request/response models & router.
