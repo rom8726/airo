@@ -33,6 +33,7 @@ Spec-first Golang project scaffold generator
   - Health-check, Prometheus metrics, pprof endpoints
   - Structured logging with slog
 - **Docker-ready** – `Dockerfile`, `docker-compose.yml`, `Makefile` are scaffolded for you.
+- **WebSockets + JWT Auth** - support for WebSockets with JWT authentication.
 - **Static analysis out of the box** – `.golangci.yml` with commonly used linters.
 - **CLI powered by [spf13/cobra]**
 - **12-factor config** – environment variables parsed with `envconfig`, `.env` supported.
