@@ -49,9 +49,11 @@ func TestView_Done_LongOpenAPIPathAndInfra(t *testing.T) {
 		items[i] = infraItem{code: code, title: code, used: true}
 	}
 	m.infraList.SetItems(items)
+	m.wsList.SetItems([]list.Item{wsItem{selected: false}})
+	m.testyList.SetItems([]list.Item{testyItem{selected: false}})
 	out := m.View()
 	require.Contains(t, out, "...openapi.yml")
-	require.Contains(t, out, "Infra:    ")
+	require.Contains(t, out, "Infra:        ")
 }
 
 func TestView_Done_AllFieldsFilled(t *testing.T) {
@@ -63,13 +65,15 @@ func TestView_Done_AllFieldsFilled(t *testing.T) {
 	m.dbList.SetItems([]list.Item{dbItem{code: "pg", selected: true}})
 	m.infraList.SetItems([]list.Item{infraItem{code: "redis", used: true}})
 	m.testyList.SetItems([]list.Item{testyItem{selected: true}})
+	m.wsList.SetItems([]list.Item{wsItem{selected: false}})
 	out := m.View()
-	require.Contains(t, out, "Project:  proj")
-	require.Contains(t, out, "Module:   mod")
-	require.Contains(t, out, "OpenAPI:  api.yml")
-	require.Contains(t, out, "Database: pg")
-	require.Contains(t, out, "Infra:    redis")
-	require.Contains(t, out, "Testy:    Yes")
+	require.Contains(t, out, "Project:      proj")
+	require.Contains(t, out, "Module:       mod")
+	require.Contains(t, out, "OpenAPI:      api.yml")
+	require.Contains(t, out, "Database:     pg")
+	require.Contains(t, out, "Infra:        redis")
+	require.Contains(t, out, "WebSocket+JWT: No")
+	require.Contains(t, out, "Testy:        Yes")
 }
 
 func TestView_Done_NoInfraNoTesty(t *testing.T) {
@@ -81,7 +85,9 @@ func TestView_Done_NoInfraNoTesty(t *testing.T) {
 	m.dbList.SetItems([]list.Item{dbItem{code: "pg", selected: true}})
 	m.infraList.SetItems([]list.Item{})
 	m.testyList.SetItems([]list.Item{testyItem{selected: false}})
+	m.wsList.SetItems([]list.Item{wsItem{selected: false}})
 	out := m.View()
-	require.Contains(t, out, "Infra:    None")
-	require.Contains(t, out, "Testy:    No")
+	require.Contains(t, out, "Infra:        None")
+	require.Contains(t, out, "WebSocket+JWT: No")
+	require.Contains(t, out, "Testy:        No")
 }
