@@ -1,0 +1,39 @@
+package contract
+
+import (
+	"context"
+	"time"
+
+	"{{ .Module }}/internal/domain"
+)
+
+type EventsFetcher interface {
+	FetchAfter(ctx context.Context, after time.Time) ([]domain.RealtimeEvent, error)
+}
+
+type RealtimeBroadcaster interface {
+	// Add registers a connection interested in a specific project and environment.
+	Add(key string, conn WSConnection)
+	// Remove unregisters the connection.
+	Remove(key string, conn WSConnection)
+}
+
+// WSConnection is a minimal interface to decouple WS transport from broadcaster.
+// API layer should implement this for WebSocket connections.
+// It should be safe for concurrent use; Send should be non-blocking or bounded.
+// Close should be idempotent.
+//
+// Note: We define a transport-agnostic contract to keep layers separated.
+// The API layer adapts a websocket connection to this interface.
+// The use case layer only works with this lightweight abstraction.
+//
+//nolint:revive // keep a simple name
+type WSConnection interface {
+	Send(msg []byte) bool
+	Close()
+}
+
+type Tokenizer interface {
+	VerifyToken(token string, tokenType domain.TokenType) (*domain.TokenClaims, error)
+}
+

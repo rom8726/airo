@@ -1,0 +1,91 @@
+package realtime
+
+import (
+	"context"
+	"encoding/json"
+	"log/slog"
+	"time"
+
+	"{{ .Module }}/internal/contract"
+	"{{ .Module }}/internal/domain"
+)
+
+type Service struct {
+	eventsFetcher contract.EventsFetcher
+	pollInterval  time.Duration
+	stopCh        chan struct{}
+
+	manager *connManager
+}
+
+func New(eventsFetcher contract.EventsFetcher) *Service {
+	return &Service{
+		eventsFetcher: eventsFetcher,
+		pollInterval:  time.Second,
+		stopCh:        make(chan struct{}),
+		manager:       newConnManager(),
+	}
+}
+
+// Start launches a background worker broadcasts events.
+func (s *Service) Start(context.Context) error {
+	go s.worker() //nolint:contextcheck // it's ok to ignore context check here
+
+	return nil
+}
+
+func (s *Service) Stop(context.Context) error {
+	close(s.stopCh)
+
+	return nil
+}
+
+func (s *Service) Broadcaster() contract.RealtimeBroadcaster { // expose broadcaster to API layer
+	return s.manager
+}
+
+func (s *Service) worker() {
+	lastSeen := time.Now().Add(-1 * time.Minute)
+	ticker := time.NewTicker(s.pollInterval)
+	defer ticker.Stop()
+
+	slog.Info("Realtime worker started", "poll_interval", s.pollInterval)
+
+	for {
+		select {
+		case <-s.stopCh:
+			slog.Info("realtime worker stopped")
+
+			return
+		case <-ticker.C:
+			events, err := s.eventsFetcher.FetchAfter(context.Background(), lastSeen)
+			if err != nil {
+				slog.Error("realtime: fetch events", "err", err)
+
+				continue
+			}
+
+			if len(events) > 0 {
+				slog.Debug("realtime: found events", "count", len(events))
+			}
+
+			for _, evt := range events {
+				payload := s.toJSON(evt)
+				slog.Debug("realtime: broadcasting event", "event", evt, "key", evt.Key())
+				s.manager.broadcastMsg(evt.Key(), payload)
+			}
+		}
+	}
+}
+
+func (s *Service) toJSON(evt domain.RealtimeEvent) []byte {
+	data, err := json.Marshal(evt)
+	if err != nil {
+		slog.Error("realtime: failed to marshal event", "err", err, "event", evt)
+
+		return []byte("{}")
+	}
+
+	return data
+}
+

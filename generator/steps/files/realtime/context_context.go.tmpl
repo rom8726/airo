@@ -1,0 +1,41 @@
+package context
+
+import (
+	"context"
+
+	"{{ .Module }}/internal/domain"
+)
+
+type contextKey string
+
+const (
+	ctxKeyUserID   contextKey = "user_id"
+	ctxKeyUsername contextKey = "username"
+)
+
+func WithUserID(ctx context.Context, userID domain.UserID) context.Context {
+	return context.WithValue(ctx, ctxKeyUserID, userID)
+}
+
+func UserID(ctx context.Context) domain.UserID {
+	id, ok := ctx.Value(ctxKeyUserID).(domain.UserID)
+	if !ok {
+		return 0
+	}
+
+	return id
+}
+
+func WithUsername(ctx context.Context, username string) context.Context {
+	return context.WithValue(ctx, ctxKeyUsername, username)
+}
+
+func Username(ctx context.Context) string {
+	v, ok := ctx.Value(ctxKeyUsername).(string)
+	if ok {
+		return v
+	}
+
+	return ""
+}
+

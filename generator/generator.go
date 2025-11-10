@@ -79,6 +79,7 @@ func defaultStepProviders() []StepProvider {
 		func(r *infra.Registry) Step { return steps.DockerfileStep{} },
 		func(r *infra.Registry) Step { return steps.NewDevEnvStep(r) },
 		func(r *infra.Registry) Step { return steps.GolangCIStep{} },
+		func(r *infra.Registry) Step { return steps.RealtimeStep{} },
 		func(r *infra.Registry) Step { return steps.TestyStep{} },
 		func(r *infra.Registry) Step { return steps.GoModTidyStep{} },
 	}

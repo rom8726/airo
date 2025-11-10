@@ -19,6 +19,7 @@ const (
 	stepOpenAPIPath
 	stepDBChoice
 	stepInfraChoice
+	stepRealtimeJWT
 	stepTesty
 	stepDone
 )
@@ -30,6 +31,7 @@ type Model struct {
 	input       textinput.Model
 	dbList      list.Model
 	infraList   list.Model
+	wsList      list.Model
 	testyList   list.Model
 	fileBrowser *FileBrowser
 	confirmMsg  string
@@ -100,6 +102,22 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 	infraList.SetWidth(windowWidth)
 	infraList.SetHeight(20)
 
+	// ----- WebSocket + JWT -----
+	wsItems := []list.Item{
+		wsItem{
+			title:    "Add WebSocket support with JWT authentication",
+			selected: false,
+		},
+	}
+
+	wsList := list.New(wsItems, list.NewDefaultDelegate(), 0, 0)
+	wsList.Title = "WebSocket options ([space] to toggle)"
+	wsList.SetShowStatusBar(false)
+	wsList.SetFilteringEnabled(false)
+	wsList.SetShowHelp(true)
+	wsList.SetWidth(windowWidth)
+	wsList.SetHeight(20)
+
 	// ----- Testy -----
 	testyItems := []list.Item{
 		testyItem{
@@ -122,6 +140,7 @@ func InitialModel(projectCfg *config.ProjectConfig, registry *infra.Registry) *M
 		input:         ti,
 		dbList:        dbList,
 		infraList:     infraList,
+		wsList:        wsList,
 		testyList:     testyList,
 		fileBrowser:   fb,
 	}

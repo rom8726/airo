@@ -1,0 +1,25 @@
+package domain
+
+import (
+	"errors"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var ErrInvalidToken = errors.New("invalid token")
+
+type TokenType string
+
+const (
+	TokenTypeAccess        TokenType = "accessToken"
+	TokenTypeRefresh       TokenType = "refreshToken"
+	TokenTypeResetPassword TokenType = "resetPassword"
+)
+
+type TokenClaims struct {
+	jwt.RegisteredClaims
+	TokenType TokenType `json:"type"`
+	UserID    uint      `json:"userId"`
+	Username  string    `json:"username"`
+}
+

@@ -38,6 +38,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dbList, cmd = m.dbList.Update(msg)
 	case stepInfraChoice:
 		m.infraList, cmd = m.infraList.Update(msg)
+	case stepRealtimeJWT:
+		m.wsList, cmd = m.wsList.Update(msg)
 	case stepTesty:
 		m.testyList, cmd = m.testyList.Update(msg)
 	}
@@ -109,16 +111,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				case stepInfraChoice:
 					m.step = stepDBChoice
-				case stepTesty:
+				case stepRealtimeJWT:
 					m.step = stepInfraChoice
+				case stepTesty:
+					m.step = stepRealtimeJWT
 				case stepDone:
 					// If we came from Testy step, go back there
 					selectedDB := getSelectedDB(m.dbList.Items())
 					if selectedDB == config.DBTypePostgres || selectedDB == config.DBTypeMySQL {
 						m.step = stepTesty
 					} else {
-						// Otherwise go back to infra choice
-						m.step = stepInfraChoice
+						// Otherwise go back to realtime step
+						m.step = stepRealtimeJWT
 					}
 				}
 			}
@@ -170,6 +174,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step = stepInfraChoice
 
 			case stepInfraChoice:
+				m.step = stepRealtimeJWT
+			case stepRealtimeJWT:
 				selectedDB := getSelectedDB(m.dbList.Items())
 				if selectedDB == config.DBTypePostgres || selectedDB == config.DBTypeMySQL {
 					m.step = stepTesty
@@ -201,12 +207,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case stepDone:
 				*m.projectConfig = config.ProjectConfig{
-					ProjectName: m.project,
-					ModuleName:  m.module,
-					OpenAPIPath: m.openapiPath,
-					DB:          getSelectedDB(m.dbList.Items()),
-					UseInfra:    getSelectedInfraCodes(m.infraList.Items()),
-					UseTesty:    getSelectedTesty(m.testyList.Items()),
+					ProjectName:    m.project,
+					ModuleName:     m.module,
+					OpenAPIPath:    m.openapiPath,
+					DB:             getSelectedDB(m.dbList.Items()),
+					UseInfra:       getSelectedInfraCodes(m.infraList.Items()),
+					UseRealtimeJWT: getSelectedRealtimeJWT(m.wsList.Items()),
+					UseTesty:       getSelectedTesty(m.testyList.Items()),
 				}
 
 				return m, tea.Quit
@@ -226,6 +233,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if item, ok := m.infraList.Items()[i].(infraItem); ok {
 					item.used = !item.used
 					m.infraList.SetItem(i, item)
+				}
+			case stepRealtimeJWT:
+				i := m.wsList.Index()
+				if item, ok := m.wsList.Items()[i].(wsItem); ok {
+					item.selected = !item.selected
+					m.wsList.SetItem(i, item)
 				}
 			case stepTesty:
 				i := m.testyList.Index()
@@ -264,6 +277,16 @@ func getSelectedInfraCodes(items []list.Item) []string {
 	}
 
 	return result
+}
+
+func getSelectedRealtimeJWT(items []list.Item) bool {
+	for _, it := range items {
+		if wi, ok := it.(wsItem); ok && wi.selected {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getSelectedTesty(items []list.Item) bool {

@@ -7,11 +7,12 @@ const (
 )
 
 type ProjectConfig struct {
-	Aborted     bool
-	ProjectName string
-	ModuleName  string
-	OpenAPIPath string
-	DB          string
-	UseInfra    []string
-	UseTesty    bool
+	Aborted        bool
+	ProjectName    string
+	ModuleName     string
+	OpenAPIPath    string
+	DB             string
+	UseInfra       []string
+	UseTesty       bool
+	UseRealtimeJWT bool
 }

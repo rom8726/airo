@@ -1,0 +1,68 @@
+package realtime
+
+import (
+	"log/slog"
+	"sync"
+
+	"{{ .Module }}/internal/contract"
+)
+
+// connManager implements contract.RealtimeBroadcaster.
+type connManager struct {
+	mu    sync.RWMutex
+	conns map[string]map[contract.WSConnection]struct{}
+}
+
+func newConnManager() *connManager {
+	return &connManager{conns: make(map[string]map[contract.WSConnection]struct{})}
+}
+
+func (m *connManager) Add(key string, conn contract.WSConnection) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	connsSet, ok := m.conns[key]
+	if !ok {
+		connsSet = make(map[contract.WSConnection]struct{})
+		m.conns[key] = connsSet
+	}
+	connsSet[conn] = struct{}{}
+	slog.Debug("WebSocket connection added to broadcaster",
+		"key", key,
+		"total_connections", len(connsSet))
+}
+
+func (m *connManager) Remove(key string, conn contract.WSConnection) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if set, ok := m.conns[key]; ok {
+		delete(set, conn)
+
+		if len(set) == 0 {
+			delete(m.conns, key)
+		}
+
+		slog.Debug("WebSocket connection removed from broadcaster",
+			"key", key,
+			"remaining_connections", len(set))
+	}
+}
+
+func (m *connManager) broadcastMsg(key string, msg []byte) {
+	m.mu.RLock()
+	connsSet := m.conns[key]
+	m.mu.RUnlock()
+
+	slog.Debug("realtime: broadcasting to connections",
+		"key", key,
+		"connection_count", len(connsSet))
+
+	for connection := range connsSet {
+		if !connection.Send(msg) {
+			// client closed or buffer full; drop it
+			slog.Debug("realtime: removing closed connection")
+			connection.Close()
+			m.Remove(key, connection)
+		}
+	}
+}
+

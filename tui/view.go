@@ -17,19 +17,19 @@ func (m *Model) View() string {
 	}
 
 	// Progress indicator with step names
-	stepNames := []string{"Project", "Module", "OpenAPI", "Database", "Infrastructure", "Testing"}
+	stepNames := []string{"Project", "Module", "OpenAPI", "Database", "Infrastructure", "WebSocket+JWT", "Testing"}
 	currentStep := int(m.step)
 
 	var progressBar string
 	if m.step == stepDone {
 		progressBar = "Configuration complete!\n"
 	} else {
-		progressBar = fmt.Sprintf("Step %d of 6: %s\n", currentStep+1, stepNames[currentStep])
+		progressBar = fmt.Sprintf("Step %d of 7: %s\n", currentStep+1, stepNames[currentStep])
 	}
 
 	// Simplified progress bar
 	progressBar += "["
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 7; i++ {
 		if m.step == stepDone || i < currentStep {
 			progressBar += "=" // Completed step
 		} else if i == currentStep {
@@ -94,6 +94,11 @@ func (m *Model) View() string {
 			progressBar,
 			m.infraList.View(),
 			navHelp)
+	case stepRealtimeJWT:
+		return fmt.Sprintf("%s\nWebSocket + JWT\n\nSelect WebSocket options:\n\n%s%s",
+			progressBar,
+			m.wsList.View(),
+			navHelp)
 	case stepTesty:
 		return fmt.Sprintf("%s\nTesting Framework\n\nSelect testing options:\n\n%s%s",
 			progressBar,
@@ -102,6 +107,10 @@ func (m *Model) View() string {
 	case stepDone:
 		selected := getSelectedInfraCodes(m.infraList.Items())
 		db := getSelectedDB(m.dbList.Items())
+		useRealtimeJWT := "No"
+		if getSelectedRealtimeJWT(m.wsList.Items()) {
+			useRealtimeJWT = "Yes"
+		}
 		useTesty := "No"
 		if getSelectedTesty(m.testyList.Items()) {
 			useTesty = "Yes"
@@ -124,12 +133,13 @@ func (m *Model) View() string {
 
 		// Create a simple summary
 		summary := "CONFIGURATION SUMMARY\n\n"
-		summary += fmt.Sprintf("Project:  %s\n", m.project)
-		summary += fmt.Sprintf("Module:   %s\n", m.module)
-		summary += fmt.Sprintf("OpenAPI:  %s\n", openAPIPath)
-		summary += fmt.Sprintf("Database: %s\n", db)
-		summary += fmt.Sprintf("Infra:    %s\n", infraStr)
-		summary += fmt.Sprintf("Testy:    %s\n", useTesty)
+		summary += fmt.Sprintf("Project:      %s\n", m.project)
+		summary += fmt.Sprintf("Module:       %s\n", m.module)
+		summary += fmt.Sprintf("OpenAPI:      %s\n", openAPIPath)
+		summary += fmt.Sprintf("Database:     %s\n", db)
+		summary += fmt.Sprintf("Infra:        %s\n", infraStr)
+		summary += fmt.Sprintf("WebSocket+JWT: %s\n", useRealtimeJWT)
+		summary += fmt.Sprintf("Testy:        %s\n", useTesty)
 
 		return fmt.Sprintf(
 			"%s\n%s\n\nYour project is ready to be generated!%s",

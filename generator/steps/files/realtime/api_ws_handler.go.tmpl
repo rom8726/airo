@@ -1,0 +1,146 @@
+package ws
+
+import (
+	"encoding/json"
+	"log/slog"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gorilla/websocket"
+
+	"{{ .Module }}/internal/contract"
+)
+
+var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+
+type Handler struct {
+	eventsBroadcaster contract.RealtimeBroadcaster
+}
+
+func New(eventsBroadcaster contract.RealtimeBroadcaster) *Handler {
+	return &Handler{
+		eventsBroadcaster: eventsBroadcaster,
+	}
+}
+
+func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	slog.Debug("WebSocket connection attempt",
+		slog.String("remote_addr", req.RemoteAddr))
+
+	conn, err := upgrader.Upgrade(writer, req, nil)
+	if err != nil {
+		slog.Error("WebSocket upgrade failed", slog.String("error", err.Error()))
+		http.Error(writer, "upgrade failed", http.StatusBadRequest)
+
+		return
+	}
+
+	slog.Debug("WebSocket connection established")
+
+	h.handleRealtimeConnection(conn, req)
+}
+
+func (h *Handler) handleRealtimeConnection(conn *websocket.Conn, req *http.Request) {
+	key := req.URL.Query().Get("key") // TODO: implement key forming!
+	if key == "" {
+		h.closeConnection(conn, websocket.ClosePolicyViolation, "key is required")
+
+		return
+	}
+
+	wsConnection := newWSConn(conn)
+	slog.Debug("adding WebSocket connection to broadcaster", "key", key)
+	h.eventsBroadcaster.Add(key, wsConnection)
+	defer func() {
+		slog.Debug("removing WebSocket connection from broadcaster")
+		h.eventsBroadcaster.Remove(key, wsConnection)
+		wsConnection.Close()
+	}()
+
+	h.setupPingPong(conn, "realtime")
+
+	h.handleRealtimeMessages(conn)
+}
+
+func (h *Handler) handleRealtimeMessages(conn *websocket.Conn) {
+	slog.Debug("starting WebSocket read loop")
+	for {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
+			if websocket.IsCloseError(err,
+				websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				slog.Debug("WebSocket connection closed normally", slog.String("error", err.Error()))
+
+				return
+			}
+
+			if !strings.Contains(err.Error(), "close 1005 (no status)") {
+				slog.Error("ws socket client error", "error", err)
+			}
+
+			return
+		}
+
+		slog.Debug("WebSocket message received",
+			slog.Int("message_type", messageType),
+			slog.String("message", string(message)))
+
+		h.handlePingMessage(conn, message, "realtime")
+	}
+}
+
+func (h *Handler) handlePingMessage(conn *websocket.Conn, message []byte, connectionType string) {
+	if len(message) == 0 {
+		return
+	}
+
+	var msg map[string]any
+	if err := json.Unmarshal(message, &msg); err != nil {
+		return
+	}
+
+	if msgType, ok := msg["type"].(string); ok && msgType == "ping" {
+		slog.Debug("WebSocket ping received, sending pong", slog.String("type", connectionType))
+
+		pongMsg := map[string]any{"type": "pong", "timestamp": time.Now().Unix()}
+		if pongData, err := json.Marshal(pongMsg); err == nil {
+			if err := conn.WriteMessage(websocket.TextMessage, pongData); err != nil {
+				slog.Error("WebSocket pong send failed",
+					slog.String("type", connectionType),
+					slog.String("error", err.Error()))
+			} else {
+				slog.Debug("WebSocket pong sent", slog.String("type", connectionType))
+			}
+		}
+	}
+}
+
+func (h *Handler) setupPingPong(conn *websocket.Conn, connectionType string) {
+	conn.SetPingHandler(func(message string) error {
+		slog.Debug("WebSocket ping received",
+			slog.String("type", connectionType),
+			slog.String("message", message))
+
+		err := conn.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(time.Second))
+		if err != nil {
+			slog.Error("WebSocket pong failed",
+				slog.String("type", connectionType),
+				slog.String("error", err.Error()))
+		} else {
+			slog.Debug("WebSocket pong sent", slog.String("type", connectionType))
+		}
+
+		return err
+	})
+}
+
+func (h *Handler) closeConnection(conn *websocket.Conn, code int, reason string) {
+	_ = conn.WriteControl(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(code, reason),
+		time.Now().Add(time.Second),
+	)
+	_ = conn.Close()
+}
+
