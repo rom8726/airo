@@ -20,6 +20,8 @@ type Config struct {
 	Logger Logger `envconfig:"LOGGER"`
 	APIServer Server `envconfig:"API_SERVER"`
 	TechServer Server `envconfig:"TECH_SERVER"`
+	{{ if .UseRealtimeJWT }}WSServer Server `envconfig:"WS_SERVER"`{{ end }}
+	{{ if .UseRealtimeJWT }}JWT JWT `envconfig:"JWT"`{{ end }}
 	MigrationsDir string `envconfig:"MIGRATIONS_DIR" default:"./migrations"`
 	{{ .DB.Processor.ConfigField }}
 	{{- range .Infras }}
@@ -52,6 +54,14 @@ type Server struct {
 	WriteTimeout time.Duration `envconfig:"WRITE_TIMEOUT" default:"30s"`
 	IdleTimeout  time.Duration `envconfig:"IDLE_TIMEOUT" default:"60s"`
 }
+
+{{ if .UseRealtimeJWT }}
+type JWT struct {
+	SecretKey        string        `envconfig:"SECRET_KEY" required:"true"`
+	AccessTTL        time.Duration `envconfig:"ACCESS_TTL" default:"15m"`
+	RefreshTTL       time.Duration `envconfig:"REFRESH_TTL" default:"168h"`
+}
+{{ end }}
 
 {{ .DB.Processor.Config }}
 

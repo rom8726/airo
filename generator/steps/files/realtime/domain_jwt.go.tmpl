@@ -11,9 +11,8 @@ var ErrInvalidToken = errors.New("invalid token")
 type TokenType string
 
 const (
-	TokenTypeAccess        TokenType = "accessToken"
-	TokenTypeRefresh       TokenType = "refreshToken"
-	TokenTypeResetPassword TokenType = "resetPassword"
+	TokenTypeAccess  TokenType = "accessToken"
+	TokenTypeRefresh TokenType = "refreshToken"
 )
 
 type TokenClaims struct {

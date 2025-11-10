@@ -61,12 +61,14 @@ func (s AppStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 		DB                 infra.DBInfo
 		Infras             []infra.InfraInfo
 		HasSecurityHandler bool
+		UseRealtimeJWT     bool
 	}
 	data := renderData{
 		Module:             cfg.ModuleName,
 		DB:                 s.reg.GetDB(cfg.DB),
 		Infras:             infraInfos,
 		HasSecurityHandler: hasSecurityHandler(cfg),
+		UseRealtimeJWT:     cfg.UseRealtimeJWT,
 	}
 
 	if err := tmpl.Execute(fApp, data); err != nil {

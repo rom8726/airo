@@ -53,12 +53,14 @@ func (s ConfigStep) Do(_ context.Context, cfg *config.ProjectConfig) error {
 	}
 
 	type renderData struct {
-		DB     infra.DBInfo
-		Infras []infra.InfraInfo
+		DB             infra.DBInfo
+		Infras         []infra.InfraInfo
+		UseRealtimeJWT bool
 	}
 	data := renderData{
-		DB:     s.reg.GetDB(cfg.DB),
-		Infras: infraInfos,
+		DB:             s.reg.GetDB(cfg.DB),
+		Infras:         infraInfos,
+		UseRealtimeJWT: cfg.UseRealtimeJWT,
 	}
 
 	if err := tmpl.Execute(fConfig, data); err != nil {

@@ -22,12 +22,11 @@ type Service struct {
 	secretKey        []byte
 	accessTTL        time.Duration
 	refreshTTL       time.Duration
-	resetPasswordTTL time.Duration
 }
 
 type ServiceParams struct {
 	SecretKey                               []byte
-	AccessTTL, RefreshTTL, ResetPasswordTTL time.Duration
+	AccessTTL, RefreshTTL time.Duration
 }
 
 func New(
@@ -37,7 +36,6 @@ func New(
 		secretKey:        params.SecretKey,
 		accessTTL:        params.AccessTTL,
 		refreshTTL:       params.RefreshTTL,
-		resetPasswordTTL: params.ResetPasswordTTL,
 	}
 }
 
@@ -51,15 +49,6 @@ func (s *Service) AccessToken(user *domain.User) (string, error) {
 
 func (s *Service) RefreshToken(user *domain.User) (string, error) {
 	return s.generateToken(user, domain.TokenTypeRefresh, s.refreshTTL)
-}
-
-func (s *Service) ResetPasswordToken(user *domain.User) (string, time.Duration, error) {
-	token, err := s.generateToken(user, domain.TokenTypeResetPassword, s.resetPasswordTTL)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return token, s.resetPasswordTTL, nil
 }
 
 func (s *Service) AccessTokenTTL() time.Duration {

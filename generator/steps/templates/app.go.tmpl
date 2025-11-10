@@ -13,6 +13,14 @@ import (
 	"{{ .Module }}/internal/config"
 	generatedserver "{{ .Module }}/internal/generated/server"
 	"{{ .Module }}/internal/api/rest"
+	{{ if .UseRealtimeJWT }}
+	wsapi "{{ .Module }}/internal/api/ws"
+	wsmiddlewares "{{ .Module }}/internal/api/ws/middlewares"
+	"{{ .Module }}/internal/contract"
+	"{{ .Module }}/internal/domain"
+	"{{ .Module }}/internal/services/realtime"
+	"{{ .Module }}/internal/services/tokenizer"
+	{{ end }}
 	"{{ .Module }}/pkg/httpserver"
 
 	"github.com/julienschmidt/httprouter"
@@ -39,6 +47,7 @@ type App struct {
     {{- end }}
 
 	APIServer *httpserver.Server
+	{{ if .UseRealtimeJWT }}WSServer *httpserver.Server{{ end }}
 
 	container *di.Container
 	diApp     *di.App
@@ -69,10 +78,18 @@ func NewApp(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*App,
     }
 
 	app.registerComponents()
+
 	app.APIServer, err = app.newAPIServer()
 	if err != nil {
 		return nil, fmt.Errorf("create API server: %w", err)
 	}
+
+	{{ if .UseRealtimeJWT }}
+	app.WSServer, err = app.newWSServer()
+	if err != nil {
+		return nil, fmt.Errorf("create WS server: %w", err)
+	}
+	{{ end }}
 
 	return app, nil
 }
@@ -100,6 +117,7 @@ func (app *App) Run(ctx context.Context) error {
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.Go(func() error { return app.APIServer.ListenAndServe(groupCtx) })
 	group.Go(func() error { return techServer.ListenAndServe(groupCtx) })
+	{{ if .UseRealtimeJWT }}group.Go(func() error { return app.WSServer.ListenAndServe(groupCtx) }){{ end }}
 	group.Go(func() error { return app.diApp.Run(groupCtx) })
 
 	return group.Wait()
@@ -120,6 +138,15 @@ func (app *App) registerComponents() {
 	app.registerComponent(rest.New)
 	{{ if .HasSecurityHandler }}app.registerComponent(rest.NewSecurityHandler){{ end }}
 	{{ if eq .DB.Code "postgresql" }}app.registerComponent(db.NewTxManager).Arg(app.PostgresPool){{end}}
+	{{ if .UseRealtimeJWT }}
+	app.registerComponent(tokenizer.New).Arg(&tokenizer.ServiceParams{
+        SecretKey:  []byte(app.Config.JWT.SecretKey),
+        AccessTTL:  app.Config.JWT.AccessTTL,
+        RefreshTTL: app.Config.JWT.RefreshTTL,
+    })
+	app.registerComponent(realtime.New)
+	app.registerComponent(newStubEventsFetcher)
+	{{ end }}
 	// TODO: register service components
 }
 
@@ -196,6 +223,53 @@ func (app *App) newTechServer() (*httpserver.Server, error) {
 		Handler:      router,
 	}, nil
 }
+
+{{ if .UseRealtimeJWT }}
+// newWSServer creates a dedicated WebSocket server on a separate port.
+func (app *App) newWSServer() (*httpserver.Server, error) {
+	cfg := app.Config.WSServer
+
+	var tokenizerSrv contract.Tokenizer
+	if err := app.container.Resolve(&tokenizerSrv); err != nil {
+		return nil, fmt.Errorf("resolve tokenizer service component: %w", err)
+	}
+
+	var rtSvc *realtime.Service
+	if err := app.container.Resolve(&rtSvc); err != nil {
+		return nil, fmt.Errorf("resolve realtime service component: %w", err)
+	}
+
+	wsHandler := wsmiddlewares.WSAuthMiddleware(tokenizerSrv)(wsapi.New(rtSvc.Broadcaster()))
+
+	router := httprouter.New()
+	router.Handler(http.MethodGet, "/api/ws", wsHandler)
+
+	lis, err := net.Listen("tcp", cfg.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("listen %q: %w", cfg.Addr, err)
+	}
+
+	return &httpserver.Server{
+		Listener:     lis,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
+		Handler:      router,
+	}, nil
+}
+
+// stubEventsFetcher is a stub implementation of contract.EventsFetcher.
+// Replace it with your own implementation that fetches real events.
+type stubEventsFetcher struct{}
+
+func newStubEventsFetcher() *stubEventsFetcher {
+	return &stubEventsFetcher{}
+}
+
+func (s *stubEventsFetcher) FetchAfter(_ context.Context, _ time.Time) ([]domain.RealtimeEvent, error) {
+	return nil, nil
+}
+{{ end }}
 
 {{ .DB.Processor.Constructor }}
 
